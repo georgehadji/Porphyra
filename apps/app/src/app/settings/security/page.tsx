@@ -1,5 +1,6 @@
 "use client";
 
+import { deriveAuthVerifier } from "@porphyra/crypto";
 import { Button, Card, Input } from "@porphyra/ui";
 import Link from "next/link";
 import { type FormEvent, useState } from "react";
@@ -29,10 +30,19 @@ export default function SecuritySettingsPage() {
   async function handleEnableStart(event: FormEvent) {
     event.preventDefault();
     setError(null);
+    if (!session?.user.email) {
+      setError("Session expired — reload and try again.");
+      return;
+    }
     setIsSubmitting(true);
     try {
+      // Better Auth's stored credential is the DERIVED verifier, never the
+      // real password — same rule as signup/login (see kdf.ts). Passing
+      // the raw password here fails with "Invalid password" even though
+      // it's correct, because it's being compared against the wrong thing.
+      const verifier = await deriveAuthVerifier(password, session.user.email);
       const { data, error: enableError } = await authClient.twoFactor.enable({
-        password,
+        password: verifier,
         issuer: "Porphyra",
       });
       if (enableError || !data) {
@@ -70,9 +80,14 @@ export default function SecuritySettingsPage() {
   async function handleDisable(event: FormEvent) {
     event.preventDefault();
     setError(null);
+    if (!session?.user.email) {
+      setError("Session expired — reload and try again.");
+      return;
+    }
     setIsSubmitting(true);
     try {
-      const { error: disableError } = await authClient.twoFactor.disable({ password });
+      const verifier = await deriveAuthVerifier(password, session.user.email);
+      const { error: disableError } = await authClient.twoFactor.disable({ password: verifier });
       if (disableError) {
         setError(disableError.message ?? "Couldn't disable 2FA — check your password.");
         return;

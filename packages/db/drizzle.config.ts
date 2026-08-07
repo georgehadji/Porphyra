@@ -5,6 +5,6 @@ export default defineConfig({
   out: "./migrations",
   dialect: "postgresql",
   dbCredentials: {
-    url: process.env.DATABASE_URL ?? "postgres://porphyra:porphyra@localhost:5432/porphyra",
+    url: process.env.DATABASE_URL ?? "postgres://porphyra:porphyra@localhost:55432/porphyra",
   },
 });

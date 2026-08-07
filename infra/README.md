@@ -15,7 +15,8 @@ pnpm install
 pnpm dev
 ```
 
-Postgres on `localhost:5432`, Redis on `localhost:6379`, Umami on `localhost:3001`.
+Postgres on `localhost:55432` (not the standard 5432 — see docker-compose.dev.yml's comment
+on why), Redis on `localhost:6379`, Umami on `localhost:3001`.
 
 ## Server provisioning runbook (run once, on a fresh VPS)
 

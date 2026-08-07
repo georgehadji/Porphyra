@@ -15,7 +15,7 @@ import { type Db, createDb } from "@porphyra/db";
 const globalForDb = globalThis as unknown as { porphyraDb?: Db };
 
 const DATABASE_URL =
-  process.env.DATABASE_URL ?? "postgres://porphyra:porphyra@localhost:5432/porphyra";
+  process.env.DATABASE_URL ?? "postgres://porphyra:porphyra@localhost:55432/porphyra";
 
 export const db: Db = globalForDb.porphyraDb ?? createDb(DATABASE_URL);
 

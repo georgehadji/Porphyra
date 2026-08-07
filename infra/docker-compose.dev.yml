@@ -11,8 +11,15 @@ services:
       POSTGRES_USER: porphyra
       POSTGRES_PASSWORD: porphyra
       POSTGRES_DB: porphyra
+    # Host port 55432, not the standard 5432 — this machine already has
+    # something else bound to 5432 system-wide (a sibling project's own
+    # Postgres, most likely). Using a distinctive port per-project avoids
+    # that class of collision instead of fighting over the default one.
+    # Container-internal traffic (e.g. umami's DATABASE_URL below) is
+    # unaffected — it talks to `postgres:5432` over the Docker network,
+    # which is untouched by this host-side remap.
     ports:
-      - "127.0.0.1:5432:5432"
+      - "127.0.0.1:55432:5432"
     volumes:
       - porphyra_pg_dev:/var/lib/postgresql/data
       - ./postgres-init:/docker-entrypoint-initdb.d:ro
