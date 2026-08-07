@@ -3,10 +3,10 @@
 Score every job posting before you spend an evening tailoring a CV for it. Encrypted by
 default. Built for job seekers everywhere, most of them remote.
 
-**Status: Phases 0–2 complete.** Foundation, marketing site, and auth + the E2EE vault are
-built — and the auth/vault flow (signup, email verification, 2FA enrollment, login, vault
-bootstrap and unlock) has been driven end to end through a real browser against a real
-Postgres instance, not just typechecked. See [Phases](#phases).
+**Status: Phases 0–4 complete.** Foundation, marketing site, auth + the E2EE vault, the core
+evaluate → track pipeline, and Stripe billing are built. The auth/vault flow has been driven
+end to end through a real browser against real Postgres, not just typechecked — see
+[Phases](#phases) for exactly what's live-verified versus what rests on typecheck/build alone.
 
 ## Why "Porphyra"
 
@@ -115,6 +115,33 @@ tracking, encrypted storage, the pipeline UI) has been driven end to end in a br
 real Postgres; the model call itself rests on the Anthropic SDK's documented tool-use shape,
 unverified against a live response. Confirm this first before relying on it.
 
+## Billing (apps/app)
+
+Free tier + one Pro plan via Stripe Checkout. `/api/billing/checkout` creates (or reuses) a
+Stripe customer and a Checkout Session; `/api/billing/webhook` is the ONLY place a
+subscription actually flips to `pro` — never the checkout route itself, since that only
+proves a session was *created*, not that payment succeeded. The webhook is idempotent against
+Stripe's at-least-once delivery via a `processed_stripe_events` ledger keyed on Stripe's own
+event ID: a duplicate delivery hits a primary-key collision and is acknowledged as already
+handled instead of double-applying the change. `/settings/billing` is the account-facing
+upgrade/manage-billing page; `checkEvaluationQuota`/`recordEvaluationUsage` (built in Phase 3)
+already read `subscriptions.tier` live, so a webhook-confirmed upgrade takes effect on the
+very next evaluation with no code change needed.
+
+Signature verification is real crypto (HMAC), not a network call, so it's actually tested —
+offline, against `stripe.webhooks.generateTestHeaderString`, confirming a validly-signed
+payload verifies, a tampered payload is rejected, and a wrong secret is rejected. One real fix
+along the way: a Stripe API version change (March 2025's "Basil") moved
+`current_period_end` from the top-level Subscription object onto each subscription item in
+their current docs — but the pinned SDK version here (`stripe@17.7.0`) still types the field
+on the top-level object, confirmed directly against its `.d.ts`, not just the docs. Went with
+what the installed SDK's types actually declare; flagged in the webhook route's own comment as
+a real risk to confirm against a live payload before launch, since a type declaration doesn't
+guarantee the field populates for every account's default API version.
+
+**Not live-verified:** an actual Checkout session, webhook delivery, or subscription upsert
+against real Stripe — no Stripe test key in this environment.
+
 ## Getting started
 
 Requires Node ≥20, pnpm 9.15+, Docker.
@@ -146,7 +173,7 @@ Each phase ends deployable.
 | 1 | Marketing site — content, legal pages, segment framework, waitlist | ✅ Built — blocked on domain choice for live deploy |
 | 2 | Auth + crypto — Better Auth, 2FA, OAuth, vault, onboarding | ✅ Built |
 | 3 | Core pipeline — evaluate → track (CV tailoring/PDF deferred, see below) | ✅ Built — AI call unverified, no API key in this environment |
-| 4 | Billing — Stripe free + Pro | Planned |
+| 4 | Billing — Stripe free + Pro | ✅ Built — checkout/webhook unverified, no Stripe test key in this environment |
 | 5 | Analytics — event pipeline, admin dashboard, ops telemetry | Planned |
 | 6 | Hardening — threat model, restore drill, launch runbook | Planned |
 

@@ -47,6 +47,9 @@ export function Dashboard({ userName, userEmail }: DashboardProps) {
           <Link href="/settings/security">
             <Button variant="secondary">Security settings</Button>
           </Link>
+          <Link href="/settings/billing">
+            <Button variant="secondary">Billing</Button>
+          </Link>
           <Button variant="ghost" onClick={handleSignOut}>
             Sign out
           </Button>

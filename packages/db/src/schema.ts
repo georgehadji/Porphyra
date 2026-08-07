@@ -261,6 +261,19 @@ export const subscriptions = pgTable("subscriptions", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+/**
+ * Webhook idempotency ledger. Stripe explicitly does not guarantee
+ * exactly-once delivery — the same event can arrive twice (a retry after a
+ * slow 200, a network blip). `id` is Stripe's own event ID, so a second
+ * delivery of the same event fails the primary-key insert and the webhook
+ * handler treats that as "already processed", not an error.
+ */
+export const processedStripeEvents = pgTable("processed_stripe_events", {
+  id: text("id").primaryKey(), // Stripe event ID, e.g. "evt_..."
+  type: text("type").notNull(),
+  processedAt: timestamp("processed_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 /** Monthly rolling usage against the plan's AI-evaluation quota. */
 export const usageCounters = pgTable(
   "usage_counters",

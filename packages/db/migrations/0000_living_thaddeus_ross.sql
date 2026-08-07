@@ -71,6 +71,12 @@ CREATE TABLE "events" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "processed_stripe_events" (
+	"id" text PRIMARY KEY NOT NULL,
+	"type" text NOT NULL,
+	"processed_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "session" (
 	"id" text PRIMARY KEY NOT NULL,
 	"user_id" text NOT NULL,
