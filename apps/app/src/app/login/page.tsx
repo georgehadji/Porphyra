@@ -33,7 +33,7 @@ export default function LoginPage() {
     const keysResponse = await fetch("/api/vault/keys");
 
     if (keysResponse.status === 404) {
-      const { payload, recoveryMnemonic: mnemonic, dekKey } = await bootstrapVault(password);
+      const { payload, recoveryMnemonic: mnemonic, dekKey, indexKey } = await bootstrapVault(password);
       const bootstrapResponse = await fetch("/api/vault/bootstrap", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -42,7 +42,7 @@ export default function LoginPage() {
       if (!bootstrapResponse.ok) {
         throw new Error("Couldn't finish setting up your vault — try logging in again.");
       }
-      vault.unlock(dekKey);
+      vault.unlock(dekKey, indexKey);
       setRecoveryMnemonic(mnemonic);
       setPhase("recoveryReveal");
       return;
@@ -53,13 +53,13 @@ export default function LoginPage() {
     }
 
     const keys: VaultKeysResponse = await keysResponse.json();
-    let dekKey: CryptoKey;
+    let unlocked: Awaited<ReturnType<typeof unlockVault>>;
     try {
-      dekKey = await unlockVault(password, keys);
+      unlocked = await unlockVault(password, keys);
     } catch {
       throw new Error("That password doesn't match your vault — check for typos.");
     }
-    vault.unlock(dekKey);
+    vault.unlock(unlocked.dekKey, unlocked.indexKey);
     router.push("/");
   }
 

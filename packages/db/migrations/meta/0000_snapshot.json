@@ -1,5 +1,5 @@
 {
-  "id": "0c81daae-1a24-405f-bf0e-203623060544",
+  "id": "6b830c59-7c60-49ca-b6bc-885cf29d9db0",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -267,6 +267,36 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "company_ciphertext": {
+          "name": "company_ciphertext",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "company_iv": {
+          "name": "company_iv",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role_ciphertext": {
+          "name": "role_ciphertext",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role_iv": {
+          "name": "role_iv",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "report_item_id": {
+          "name": "report_item_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
         },
         "state": {
           "name": "state",

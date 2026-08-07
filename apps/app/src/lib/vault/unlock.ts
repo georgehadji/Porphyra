@@ -4,6 +4,7 @@ import {
   type EncryptedPayload,
   type KdfParams,
   base64ToBytes,
+  deriveIndexKey,
   deriveKeyMaterial,
   importAesKey,
   unwrapRawKey,
@@ -14,6 +15,11 @@ export interface VaultKeysResponse {
   encSalt: string;
   recoveryWrappedDek: EncryptedPayload;
   kdfParams: KdfParams;
+}
+
+export interface UnlockedVault {
+  dekKey: CryptoKey;
+  indexKey: CryptoKey;
 }
 
 /**
@@ -27,24 +33,32 @@ export interface VaultKeysResponse {
  * the vault password itself (only the separate auth verifier — see
  * apps/app/src/lib/auth.ts).
  */
-export async function unlockVault(password: string, keys: VaultKeysResponse): Promise<CryptoKey> {
+export async function unlockVault(password: string, keys: VaultKeysResponse): Promise<UnlockedVault> {
   const encSalt = base64ToBytes(keys.encSalt);
   const mkRaw = await deriveKeyMaterial(password, encSalt, keys.kdfParams);
   const masterKey = await importAesKey(mkRaw, false);
   const dekRaw = await unwrapRawKey(masterKey, keys.wrappedDek);
-  return importAesKey(dekRaw, false);
+  const [dekKey, indexKey] = await Promise.all([
+    importAesKey(dekRaw, false),
+    deriveIndexKey(dekRaw),
+  ]);
+  return { dekKey, indexKey };
 }
 
 /**
  * The recovery path: unwrap the DEK with the 24-word mnemonic instead of
  * the password. Used when a user has forgotten their password but still
- * has their recovery key — see the account-recovery flow (Phase 3).
+ * has their recovery key — see the account-recovery flow (Phase 4+).
  */
 export async function unlockVaultWithRecoveryKey(
   recoveryKeyRaw: Uint8Array,
   keys: Pick<VaultKeysResponse, "recoveryWrappedDek">,
-): Promise<CryptoKey> {
+): Promise<UnlockedVault> {
   const recoveryKey = await importAesKey(recoveryKeyRaw, false);
   const dekRaw = await unwrapRawKey(recoveryKey, keys.recoveryWrappedDek);
-  return importAesKey(dekRaw, false);
+  const [dekKey, indexKey] = await Promise.all([
+    importAesKey(dekRaw, false),
+    deriveIndexKey(dekRaw),
+  ]);
+  return { dekKey, indexKey };
 }

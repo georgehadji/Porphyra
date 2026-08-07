@@ -206,6 +206,13 @@ export const vaultItems = pgTable(
  * Application tracker. Metadata stays CLEAR (drives the funnel/analytics
  * queries directly); the report/notes/JD content lives encrypted in
  * `vault_items` and is linked, not embedded.
+ *
+ * Company/role appear TWICE, deliberately: the blind index is a one-way
+ * hash for server-side filtering/dedup (the server can test "does this
+ * match" but never recover the value — see packages/crypto's blindIndex.ts)
+ * and is useless for rendering a pipeline list. The `*Ciphertext`/`*Iv`
+ * pair is genuinely encrypted (reversible, client-side only) so the UI has
+ * something to actually decrypt and show the user.
  */
 export const applications = pgTable(
   "applications",
@@ -216,6 +223,13 @@ export const applications = pgTable(
       .references(() => user.id, { onDelete: "cascade" }),
     companyBlindIndex: text("company_blind_index").notNull(),
     roleBlindIndex: text("role_blind_index").notNull(),
+    companyCiphertext: text("company_ciphertext").notNull(),
+    companyIv: text("company_iv").notNull(),
+    roleCiphertext: text("role_ciphertext").notNull(),
+    roleIv: text("role_iv").notNull(),
+    /** FK to the vault_items row holding the full encrypted evaluation
+     * report — set once evaluation completes. */
+    reportItemId: uuid("report_item_id"),
     state: applicationStateEnum("state").notNull().default("evaluated"),
     score: numeric("score", { precision: 3, scale: 2 }), // 0.00–5.00
     legitimacyTier: text("legitimacy_tier"),

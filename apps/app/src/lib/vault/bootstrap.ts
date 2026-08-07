@@ -5,6 +5,7 @@ import {
   type EncryptedPayload,
   type KdfParams,
   MASTER_KEY_PARAMS,
+  deriveIndexKey,
   deriveKeyMaterial,
   generateDek,
   generateRecoveryKey,
@@ -27,6 +28,9 @@ export interface VaultBootstrapResult {
   /** The unwrapped DEK, ready to use immediately post-signup so the user
    * isn't asked to log in again right after registering. */
   dekKey: CryptoKey;
+  /** Derived from the same DEK via HKDF — see VaultContext's comment on
+   * why this always travels paired with dekKey, never generated separately. */
+  indexKey: CryptoKey;
 }
 
 /**
@@ -48,6 +52,7 @@ export async function bootstrapVault(password: string): Promise<VaultBootstrapRe
   const recoveryWrappedDek = await wrapRawKey(recoveryKey, dekRaw);
 
   const dekKey = await importAesKey(dekRaw, false);
+  const indexKey = await deriveIndexKey(dekRaw);
 
   return {
     payload: {
@@ -58,5 +63,6 @@ export async function bootstrapVault(password: string): Promise<VaultBootstrapRe
     },
     recoveryMnemonic: mnemonic,
     dekKey,
+    indexKey,
   };
 }

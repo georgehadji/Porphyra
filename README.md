@@ -88,6 +88,33 @@ once, with a mandatory written acknowledgement, and never touches the server.
 pnpm --filter @porphyra/crypto test   # round-trip, wrong-password-rejection, auth-verifier tests
 ```
 
+## Core pipeline (apps/app)
+
+Evaluate → track → view. `/evaluate` decrypts your latest CV client-side, sends it and the
+pasted job description for one consented request to `/api/evaluate`, which enforces the
+free-tier quota (`usage_counters`), calls Claude via tool-use to force a structured report
+matching `evaluationReportSchema`, tracks the call in `ai_jobs` (tokens, cost, status), and
+returns the plaintext report. The client re-encrypts it, saves it as a `vault_items` row, and
+creates an `applications` row — company/role are stored BOTH as a one-way blind index (server
+filtering) and as genuinely encrypted fields (so the pipeline UI has something to decrypt and
+display; a blind index alone can't be reversed for that). `/pipeline` lists and decrypts them;
+`/pipeline/[id]` shows the full report and drives state transitions through
+`isValidTransition` — the UI only ever offers legal next states.
+
+`VaultContext` holds an `indexKey` (HKDF-derived from the DEK) alongside the DEK itself, so
+every blind index in the app comes from the same key hierarchy — never a one-off random key
+that would make dedup silently compare against nothing.
+
+**Deliberately deferred:** CV tailoring and PDF generation. Real, separate scope (templating,
+rendering) that doesn't belong bolted onto the evaluate→track loop — `/cv` currently stores
+plain pasted text, not a structured or exportable document.
+
+**Not live-verified:** the actual Anthropic API call in `packages/ai/src/prompts/evaluate.ts`
+— this environment has no `ANTHROPIC_API_KEY`. Everything around it (quota enforcement, job
+tracking, encrypted storage, the pipeline UI) has been driven end to end in a browser against
+real Postgres; the model call itself rests on the Anthropic SDK's documented tool-use shape,
+unverified against a live response. Confirm this first before relying on it.
+
 ## Getting started
 
 Requires Node ≥20, pnpm 9.15+, Docker.
@@ -118,7 +145,7 @@ Each phase ends deployable.
 | 0 | Foundation — monorepo, tokens, UI kit, core logic, crypto, infra | ✅ Done |
 | 1 | Marketing site — content, legal pages, segment framework, waitlist | ✅ Built — blocked on domain choice for live deploy |
 | 2 | Auth + crypto — Better Auth, 2FA, OAuth, vault, onboarding | ✅ Built |
-| 3 | Core pipeline — evaluate → track → tailor CV → PDF | Planned |
+| 3 | Core pipeline — evaluate → track (CV tailoring/PDF deferred, see below) | ✅ Built — AI call unverified, no API key in this environment |
 | 4 | Billing — Stripe free + Pro | Planned |
 | 5 | Analytics — event pipeline, admin dashboard, ops telemetry | Planned |
 | 6 | Hardening — threat model, restore drill, launch runbook | Planned |
