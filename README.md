@@ -3,8 +3,10 @@
 Score every job posting before you spend an evening tailoring a CV for it. Encrypted by
 default. Built for job seekers everywhere, most of them remote.
 
-**Status: Phase 0 (foundation) complete.** Domain logic, encryption, design system, and
-both app shells build and pass their tests. No user-facing product yet — see [Phases](#phases).
+**Status: Phases 0–2 complete.** Foundation, marketing site, and auth + the E2EE vault are
+built — and the auth/vault flow (signup, email verification, 2FA enrollment, login, vault
+bootstrap and unlock) has been driven end to end through a real browser against a real
+Postgres instance, not just typechecked. See [Phases](#phases).
 
 ## Why "Porphyra"
 
