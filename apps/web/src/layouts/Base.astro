@@ -1,0 +1,36 @@
+---
+import "@porphyra/tokens/css";
+
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en" data-theme="core">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="color-scheme" content="light" />
+    <!-- Light theme only, by product decision — no dark meta variant. -->
+    <meta name="theme-color" content="#FBF8F5" />
+    <style>
+      body {
+        margin: 0;
+        background: var(--color-background);
+        color: var(--color-foreground);
+        font-family: var(--p-font-sans);
+        line-height: var(--p-leading-normal);
+      }
+    </style>
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

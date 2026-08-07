@@ -1,0 +1,37 @@
+/**
+ * Layer 3 — Component tokens.
+ * The only layer components are allowed to hardcode against. Adding a new
+ * segment theme (packages/tokens/themes/*.css) can override layer 2 without
+ * ever touching this file — components stay untouched across rebrands.
+ */
+:root {
+  /* Button */
+  --button-radius: var(--p-radius-md);
+  --button-padding-x: var(--p-space-5);
+  --button-padding-y: var(--p-space-3);
+  --button-font-weight: 600;
+  --button-primary-bg: var(--color-brand);
+  --button-primary-bg-hover: var(--color-brand-hover);
+  --button-primary-fg: var(--color-on-brand);
+
+  /* Card */
+  --card-radius: var(--p-radius-lg);
+  --card-padding: var(--p-space-6);
+  --card-bg: var(--color-surface);
+  --card-border: var(--color-border);
+  --card-shadow: var(--p-shadow-sm);
+
+  /* Input */
+  --input-radius: var(--p-radius-md);
+  --input-padding-x: var(--p-space-4);
+  --input-padding-y: var(--p-space-3);
+  --input-bg: var(--color-surface);
+  --input-border: var(--color-border-strong);
+  --input-border-focus: var(--color-brand);
+
+  /* Badge (used for score bands, application states, legitimacy tiers) */
+  --badge-radius: var(--p-radius-full);
+  --badge-padding-x: var(--p-space-3);
+  --badge-padding-y: var(--p-space-1);
+  --badge-font-size: var(--p-text-xs);
+}

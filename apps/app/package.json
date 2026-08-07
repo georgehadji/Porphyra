@@ -1,0 +1,30 @@
+{
+  "name": "@porphyra/app",
+  "version": "0.1.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@porphyra/ai": "workspace:*",
+    "@porphyra/core": "workspace:*",
+    "@porphyra/crypto": "workspace:*",
+    "@porphyra/db": "workspace:*",
+    "@porphyra/tokens": "workspace:*",
+    "@porphyra/ui": "workspace:*",
+    "next": "^16.2.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "typescript": "~5.9.0"
+  }
+}

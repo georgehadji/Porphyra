@@ -1,0 +1,115 @@
+/**
+ * Layer 1 — Primitives.
+ * Raw values only. Nothing here is used directly in components — see
+ * semantic.css. This file exists so a rebrand touches one place.
+ *
+ * Brand hue ("porphyra") anchored on three colors fixed by the design plan;
+ * the rest of the 50–950 scale is interpolated in HSL around them:
+ *   500 = #8E1259 → hsl(326 78% 31%)
+ *   700 = #66023C → hsl(325 96% 20%)
+ *   900 = #3B0A2A → hsl(321 71% 14%)
+ */
+:root {
+  /* ---- Brand scale ---- */
+  --p-porphyra-50: hsl(326 90% 97%);
+  --p-porphyra-100: hsl(326 88% 93%);
+  --p-porphyra-200: hsl(326 85% 86%);
+  --p-porphyra-300: hsl(326 82% 74%);
+  --p-porphyra-400: hsl(326 80% 55%);
+  --p-porphyra-500: hsl(326 78% 31%); /* #8E1259 — interactive */
+  --p-porphyra-600: hsl(326 87% 25%);
+  --p-porphyra-700: hsl(325 96% 20%); /* #66023C — primary */
+  --p-porphyra-800: hsl(323 92% 17%);
+  --p-porphyra-900: hsl(321 71% 14%); /* #3B0A2A — deep accents */
+  --p-porphyra-950: hsl(320 75% 8%);
+
+  /* ---- Warm neutral scale (shell → ink) ---- */
+  --p-neutral-0: hsl(30 43% 99%);
+  --p-neutral-50: hsl(30 43% 97%); /* #FBF8F5 — shell */
+  --p-neutral-100: hsl(28 32% 91%); /* #EFE7E0 — sand */
+  --p-neutral-200: hsl(28 22% 84%);
+  --p-neutral-300: hsl(29 16% 72%);
+  --p-neutral-400: hsl(29 13% 56%);
+  --p-neutral-500: hsl(30 14% 42%);
+  --p-neutral-600: hsl(30 16% 32%);
+  --p-neutral-700: hsl(330 18% 22%);
+  --p-neutral-800: hsl(330 20% 15%);
+  --p-neutral-900: hsl(330 24% 8%); /* #1A1015 — ink */
+  --p-neutral-950: hsl(330 26% 5%);
+
+  /* ---- Status colors ---- */
+  --p-verdigris-500: hsl(166 56% 28%); /* #1F6F5C — success */
+  --p-verdigris-100: hsl(166 45% 90%);
+  --p-verdigris-700: hsl(166 60% 18%);
+  --p-amber-500: hsl(33 86% 38%); /* #B4690E — warning */
+  --p-amber-100: hsl(33 80% 90%);
+  --p-amber-700: hsl(33 90% 26%);
+  --p-red-500: hsl(5 72% 42%); /* error / red-flags */
+  --p-red-100: hsl(5 70% 92%);
+  --p-red-700: hsl(5 78% 28%);
+
+  /* ---- Typography ---- */
+  --p-font-display: "Fraunces Variable", ui-serif, Georgia, serif;
+  --p-font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --p-font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
+
+  --p-text-xs: 0.75rem; /* 12px */
+  --p-text-sm: 0.875rem; /* 14px */
+  --p-text-base: 1rem; /* 16px */
+  --p-text-lg: 1.125rem; /* 18px */
+  --p-text-xl: 1.25rem; /* 20px */
+  --p-text-2xl: 1.5rem; /* 24px */
+  --p-text-3xl: 1.875rem; /* 30px */
+  --p-text-4xl: 2.25rem; /* 36px */
+  --p-text-5xl: 3rem; /* 48px */
+  --p-text-6xl: 3.75rem; /* 60px */
+
+  --p-leading-tight: 1.15;
+  --p-leading-snug: 1.35;
+  --p-leading-normal: 1.6;
+  --p-leading-relaxed: 1.75;
+
+  /* ---- Spacing (4px base) ---- */
+  --p-space-1: 0.25rem;
+  --p-space-2: 0.5rem;
+  --p-space-3: 0.75rem;
+  --p-space-4: 1rem;
+  --p-space-5: 1.25rem;
+  --p-space-6: 1.5rem;
+  --p-space-8: 2rem;
+  --p-space-10: 2.5rem;
+  --p-space-12: 3rem;
+  --p-space-16: 4rem;
+  --p-space-20: 5rem;
+  --p-space-24: 6rem;
+  --p-space-32: 8rem;
+
+  /* ---- Radius ---- */
+  --p-radius-sm: 0.25rem;
+  --p-radius-md: 0.5rem;
+  --p-radius-lg: 0.875rem;
+  --p-radius-xl: 1.25rem;
+  --p-radius-full: 9999px;
+
+  /* ---- Elevation — soft, warm shadows (no cold grey drop-shadows) ---- */
+  --p-shadow-sm: 0 1px 2px hsl(325 40% 15% / 0.06);
+  --p-shadow-md: 0 4px 12px hsl(325 40% 15% / 0.08), 0 1px 2px hsl(325 40% 15% / 0.06);
+  --p-shadow-lg: 0 12px 32px hsl(325 40% 15% / 0.12), 0 2px 6px hsl(325 40% 15% / 0.06);
+  --p-shadow-focus: 0 0 0 3px hsl(326 80% 55% / 0.35);
+
+  /* ---- Motion ---- */
+  --p-duration-fast: 120ms;
+  --p-duration-base: 200ms;
+  --p-duration-slow: 360ms;
+  --p-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --p-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+/* Respect reduced-motion at the primitive layer so every consumer inherits it. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --p-duration-fast: 0ms;
+    --p-duration-base: 0ms;
+    --p-duration-slow: 0ms;
+  }
+}

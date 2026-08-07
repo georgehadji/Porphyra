@@ -1,0 +1,49 @@
+---
+import Base from "../layouts/Base.astro";
+
+// Placeholder homepage — the real relevance -> mechanism -> confidence ->
+// action structure from the plan's Content plan section lands in Phase 1.
+// This exists now so the monorepo has an end-to-end buildable, deployable
+// page proving the token/build pipeline actually works.
+---
+
+<Base
+  title="Porphyra — judgement, not volume"
+  description="Score every job posting before you apply. Encrypted by default."
+>
+  <main class="hero">
+    <p class="eyebrow">Coming soon</p>
+    <h1>Fewer applications. Better ones.</h1>
+    <p class="lede">
+      Porphyra scores every job posting against your profile before you spend an evening
+      tailoring a CV for it — and tells you honestly when a role isn't worth your time.
+    </p>
+  </main>
+</Base>
+
+<style>
+  .hero {
+    max-width: 40rem;
+    margin: 0 auto;
+    padding: var(--p-space-32) var(--p-space-6);
+    text-align: center;
+  }
+  .eyebrow {
+    font-size: var(--p-text-sm);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-brand-text);
+  }
+  h1 {
+    font-family: var(--p-font-display);
+    font-size: var(--p-text-5xl);
+    line-height: var(--p-leading-tight);
+    margin: var(--p-space-4) 0;
+    color: var(--p-porphyra-900);
+  }
+  .lede {
+    font-size: var(--p-text-lg);
+    color: var(--color-muted);
+  }
+</style>

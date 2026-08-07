@@ -1,0 +1,102 @@
+# Production stack. Differences from docker-compose.dev.yml, deliberately:
+#   - No ports published to the host except Caddy's 80/443 — every other
+#     service is reachable only over the internal Docker network.
+#   - Non-root users, read-only root filesystems, dropped capabilities.
+#   - Named volumes for persistent data; nothing bind-mounted from the repo.
+#   - Image tags pinned to a digest at deploy time (see infra/scripts/deploy.sh)
+#     — the `:TAG` placeholders below are substituted by that script, never
+#     left as `:latest` in a running deployment.
+#
+# apps/app and apps/web images are built by CI and pushed to a registry;
+# this file references them by tag, it does not build them.
+name: porphyra
+
+services:
+  caddy:
+    image: caddy:2.9-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+      - web
+    networks: [porphyra]
+
+  web:
+    image: ${REGISTRY:-ghcr.io/porphyra}/web:${WEB_TAG:?set WEB_TAG at deploy time}
+    restart: unless-stopped
+    read_only: true
+    tmpfs: ["/tmp"]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    networks: [porphyra]
+
+  app:
+    image: ${REGISTRY:-ghcr.io/porphyra}/app:${APP_TAG:?set APP_TAG at deploy time}
+    restart: unless-stopped
+    read_only: true
+    tmpfs: ["/tmp"]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    env_file: [.env]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks: [porphyra]
+
+  postgres:
+    image: postgres:16.4-alpine3.20
+    restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    cap_add: ["CHOWN", "DAC_OVERRIDE", "FOWNER", "SETGID", "SETUID"] # postgres init needs these
+    env_file: [.env]
+    volumes:
+      - porphyra_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U porphyra -d porphyra"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [porphyra]
+
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    command: ["redis-server", "--save", "60", "1", "--appendonly", "yes"]
+    volumes:
+      - porphyra_redis_data:/data
+    networks: [porphyra]
+
+  umami:
+    image: ghcr.io/umami-software/umami:postgresql-latest
+    restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    environment:
+      DATABASE_URL: ${UMAMI_DATABASE_URL:?set in .env}
+      DATABASE_TYPE: postgresql
+      APP_SECRET: ${UMAMI_APP_SECRET:?set in .env}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [porphyra]
+
+networks:
+  porphyra:
+    driver: bridge
+
+volumes:
+  porphyra_pg_data:
+  porphyra_redis_data:
+  caddy_data:
+  caddy_config:

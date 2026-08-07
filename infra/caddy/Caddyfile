@@ -1,0 +1,53 @@
+# Porphyra reverse proxy. Replace the two domains below once one is chosen
+# (see the plan's Assumptions — this is the one open item before Phase 1
+# can deploy). Caddy auto-provisions + auto-renews TLS via ACME; nothing
+# else to configure for HTTPS.
+#
+# Rate limiting: the security-relevant limits (login attempts, evaluation
+# requests) are enforced application-side against Redis (Phase 2/3), because
+# they need to be per-account, not just per-IP. Caddy's job here is TLS,
+# headers, and routing — not the security-critical rate limits.
+
+{
+	email security@porphyra.example
+	# HSTS preload requires this to be true in production once the domain is
+	# submitted to hstspreload.org — do that deliberately, not by accident;
+	# it cannot be un-submitted quickly if something goes wrong.
+}
+
+(security_headers) {
+	header {
+		Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()"
+		Cross-Origin-Opener-Policy "same-origin"
+		Cross-Origin-Resource-Policy "same-origin"
+		# Cross-Origin-Embedder-Policy is deliberately NOT set globally — it
+		# breaks third-party embeds (Stripe Checkout/Elements) unless every
+		# such resource also opts in via CORP/CORS. Revisit per-route in
+		# Phase 4 if Stripe's embedded flows need it.
+		-Server
+	}
+}
+
+# Marketing — 100% static (Astro), so the CSP can be maximally strict: no
+# inline scripts, no eval, nothing loaded cross-origin except the
+# self-hosted Umami script.
+porphyra.example, www.porphyra.example {
+	import security_headers
+	header Content-Security-Policy "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'; upgrade-insecure-requests"
+	encode zstd gzip
+	reverse_proxy web:3000
+}
+
+# App — Next.js needs per-request nonces for its inline hydration script;
+# handled by the app itself (Phase 2/3 sets the CSP header there, since only
+# app code knows the per-request nonce). Caddy still enforces the baseline
+# security headers here.
+app.porphyra.example {
+	import security_headers
+	encode zstd gzip
+	reverse_proxy app:3000
+}

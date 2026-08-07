@@ -1,0 +1,97 @@
+.p-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--p-space-2);
+  border-radius: var(--button-radius);
+  padding: var(--button-padding-y) var(--button-padding-x);
+  font-family: var(--p-font-sans);
+  font-weight: var(--button-font-weight);
+  font-size: var(--p-text-base);
+  line-height: 1;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition:
+    background-color var(--p-duration-fast) var(--p-ease-out),
+    border-color var(--p-duration-fast) var(--p-ease-out),
+    transform var(--p-duration-fast) var(--p-ease-out);
+}
+
+.p-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+/* Never suppressed — a visible focus ring is non-negotiable a11y, not a
+ * cosmetic default to override. */
+.p-button:focus-visible {
+  outline: none;
+  box-shadow: var(--p-shadow-focus);
+}
+
+.p-button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.p-button--primary {
+  background: var(--button-primary-bg);
+  color: var(--button-primary-fg);
+}
+.p-button--primary:hover:not(:disabled) {
+  background: var(--button-primary-bg-hover);
+}
+
+.p-button--secondary {
+  background: var(--color-surface);
+  color: var(--color-foreground);
+  border-color: var(--color-border-strong);
+}
+.p-button--secondary:hover:not(:disabled) {
+  background: var(--color-surface-hover);
+}
+
+.p-button--ghost {
+  background: transparent;
+  color: var(--color-brand-text);
+}
+.p-button--ghost:hover:not(:disabled) {
+  background: var(--color-brand-soft);
+}
+
+.p-button--danger {
+  background: var(--color-danger);
+  color: var(--p-neutral-0);
+}
+.p-button--danger:hover:not(:disabled) {
+  background: var(--p-red-700);
+}
+
+.p-button--sm {
+  font-size: var(--p-text-sm);
+  padding: var(--p-space-2) var(--p-space-3);
+}
+.p-button--lg {
+  font-size: var(--p-text-lg);
+  padding: var(--p-space-4) var(--p-space-6);
+}
+
+.p-button__spinner {
+  width: 1em;
+  height: 1em;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  animation: p-spin var(--p-duration-slow) linear infinite;
+}
+
+@keyframes p-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .p-button__spinner {
+    animation: none;
+  }
+}

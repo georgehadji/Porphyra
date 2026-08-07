@@ -1,0 +1,5 @@
+/* Import order matters: primitives → semantic → component → active theme. */
+@import "./primitives.css";
+@import "./semantic.css";
+@import "./component.css";
+@import "./themes/core.css";

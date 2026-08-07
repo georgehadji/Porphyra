@@ -1,0 +1,23 @@
+/**
+ * Segment theme: "core" — the default Porphyra brand, no overrides.
+ *
+ * A new segment (e.g. designers, developers, nurses, new-grads) is a sibling
+ * file that overrides a SUBSET of semantic.css custom properties — never
+ * primitives.css or component.css. Keep overrides to brand/surface/text
+ * tokens; status colors (success/warning/danger) stay consistent across
+ * segments so the product doesn't relearn its own meaning.
+ *
+ * Example new segment file, themes/designers.css:
+ *
+ *   :root[data-theme="designers"] {
+ *     --color-brand: var(--p-porphyra-600);
+ *     --color-brand-soft: hsl(280 70% 96%);
+ *     --p-font-display: "Fraunces Variable", ui-serif, serif;
+ *   }
+ *
+ * Then set <html data-theme="designers"> at build time per marketing site
+ * (apps/web reads it from the Astro content collection's segment config).
+ */
+:root[data-theme="core"] {
+  /* Intentionally empty — core IS semantic.css's default values. */
+}

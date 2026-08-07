@@ -1,0 +1,53 @@
+# Local development stack — NOT what runs in production (see docker-compose.prod.yml,
+# added in Phase 6). Ports are published directly to localhost for convenience;
+# production binds services to the Docker network only, behind Caddy.
+name: porphyra-dev
+
+services:
+  postgres:
+    image: postgres:16.4-alpine3.20
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: porphyra
+      POSTGRES_PASSWORD: porphyra
+      POSTGRES_DB: porphyra
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - porphyra_pg_dev:/var/lib/postgresql/data
+      - ./postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U porphyra -d porphyra"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Self-hosted, cookieless web analytics for apps/web — see the plan's
+  # Analytics section for why this replaces Google Analytics / PostHog.
+  umami:
+    image: ghcr.io/umami-software/umami:postgresql-latest
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://porphyra:porphyra@postgres:5432/umami
+      DATABASE_TYPE: postgresql
+      APP_SECRET: dev-only-secret-change-in-prod
+    ports:
+      - "127.0.0.1:3001:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  porphyra_pg_dev:

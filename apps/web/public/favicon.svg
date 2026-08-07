@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Placeholder mark: a simplified murex/logarithmic spiral in the brand
+       purple. Full logo system (multiple weights, wordmark, favicons at
+       every size) is Phase 1 design work — this exists so the site has a
+       non-default tab icon from the first deploy. -->
+  <circle cx="16" cy="16" r="16" fill="#66023C"/>
+  <path d="M16 24c-4.4 0-8-3.6-8-8s3.6-8 8-8c3.3 0 6 2.7 6 6s-2.2 5-5 5c-2.2 0-4-1.8-4-4s1.3-3.3 3-3.3"
+        fill="none" stroke="#FBF8F5" stroke-width="1.6" stroke-linecap="round"/>
+</svg>

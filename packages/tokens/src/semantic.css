@@ -1,0 +1,47 @@
+/**
+ * Layer 2 — Semantic tokens.
+ * Names describe ROLE, not value ("surface", not "neutral-50") — this is the
+ * layer components and Tailwind consume. Light theme only, by product
+ * decision: no `prefers-color-scheme` branch, no `.dark` class. If that ever
+ * changes, it changes here and nowhere else.
+ */
+:root {
+  /* Surfaces */
+  --color-background: var(--p-neutral-50);
+  --color-surface: var(--p-neutral-0);
+  --color-surface-raised: var(--p-neutral-0);
+  --color-surface-sunken: var(--p-neutral-100);
+  --color-surface-hover: var(--p-neutral-100);
+  --color-border: var(--p-neutral-200);
+  --color-border-strong: var(--p-neutral-300);
+
+  /* Text */
+  --color-foreground: var(--p-neutral-900);
+  --color-muted: var(--p-neutral-600);
+  --color-faint: var(--p-neutral-500);
+  --color-on-brand: var(--p-neutral-0); /* text placed on brand-700 fill */
+
+  /* Brand */
+  --color-brand: var(--p-porphyra-700);
+  --color-brand-hover: var(--p-porphyra-500);
+  --color-brand-active: var(--p-porphyra-800);
+  --color-brand-soft: var(--p-porphyra-50);
+  --color-brand-border: var(--p-porphyra-200);
+  --color-brand-text: var(--p-porphyra-700); /* small text on light surfaces, AA+ */
+
+  /* Status */
+  --color-success: var(--p-verdigris-500);
+  --color-success-soft: var(--p-verdigris-100);
+  --color-success-text: var(--p-verdigris-700);
+  --color-warning: var(--p-amber-500);
+  --color-warning-soft: var(--p-amber-100);
+  --color-warning-text: var(--p-amber-700);
+  --color-danger: var(--p-red-500);
+  --color-danger-soft: var(--p-red-100);
+  --color-danger-text: var(--p-red-700);
+
+  /* Focus ring — always visible, never suppressed (a11y requirement) */
+  --color-focus-ring: var(--p-porphyra-400);
+
+  color-scheme: light;
+}
