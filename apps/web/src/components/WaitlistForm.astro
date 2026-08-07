@@ -1,0 +1,160 @@
+---
+// Static Astro page, no server of its own — the form POSTs cross-origin to
+// apps/app's /api/waitlist (Next.js has the Node runtime this needs). See
+// PUBLIC_APP_ORIGIN in .env.example.
+---
+
+<form id="waitlist-form" class="waitlist" novalidate>
+  <div class="waitlist__row">
+    <label for="waitlist-email" class="sr-only">Email address</label>
+    <input
+      id="waitlist-email"
+      name="email"
+      type="email"
+      required
+      placeholder="you@example.com"
+      autocomplete="email"
+    />
+    <!-- Honeypot: hidden from sighted + screen-reader users via CSS, real
+         bots fill every field. A non-empty value silently drops the
+         submission server-side without telling the bot why. -->
+    <input type="text" name="company_website" tabindex="-1" autocomplete="off" class="hp" aria-hidden="true" />
+    <button type="submit">Get early access</button>
+  </div>
+  <label class="waitlist__consent">
+    <input type="checkbox" name="consent" required />
+    <span>
+      Email me about Porphyra's launch. I've read the
+      <a href="/legal/privacy">privacy policy</a> — no spam, unsubscribe anytime.
+    </span>
+  </label>
+  <p class="waitlist__status" role="status" aria-live="polite"></p>
+</form>
+
+<style>
+  .waitlist {
+    display: flex;
+    flex-direction: column;
+    gap: var(--p-space-3);
+    max-width: 28rem;
+    margin: var(--p-space-8) auto 0;
+  }
+  .waitlist__row {
+    display: flex;
+    gap: var(--p-space-2);
+  }
+  .waitlist__row input[type="email"] {
+    flex: 1;
+    border-radius: var(--input-radius);
+    padding: var(--input-padding-y) var(--input-padding-x);
+    border: 1px solid var(--input-border);
+    background: var(--input-bg);
+    font-size: var(--p-text-base);
+  }
+  .waitlist__row input[type="email"]:focus-visible {
+    outline: none;
+    border-color: var(--input-border-focus);
+    box-shadow: var(--p-shadow-focus);
+  }
+  .waitlist__row button {
+    background: var(--button-primary-bg);
+    color: var(--button-primary-fg);
+    border: none;
+    border-radius: var(--button-radius);
+    padding: var(--button-padding-y) var(--button-padding-x);
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .waitlist__row button:hover {
+    background: var(--button-primary-bg-hover);
+  }
+  .waitlist__row button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  .waitlist__consent {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--p-space-2);
+    font-size: var(--p-text-sm);
+    color: var(--color-muted);
+    text-align: left;
+  }
+  .waitlist__consent input {
+    margin-top: 3px;
+  }
+  .waitlist__status {
+    font-size: var(--p-text-sm);
+    min-height: 1.25em;
+    margin: 0;
+  }
+  .waitlist__status[data-tone="error"] {
+    color: var(--color-danger-text);
+  }
+  .waitlist__status[data-tone="success"] {
+    color: var(--color-success-text);
+  }
+  .hp {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+  }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+  }
+</style>
+
+<script>
+  const APP_ORIGIN = import.meta.env.PUBLIC_APP_ORIGIN ?? "";
+  const form = document.getElementById("waitlist-form") as HTMLFormElement | null;
+  const status = form?.querySelector<HTMLParagraphElement>(".waitlist__status");
+  const button = form?.querySelector<HTMLButtonElement>("button[type=submit]");
+
+  form?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!status || !button) return;
+
+    const data = new FormData(form);
+    if (data.get("company_website")) return; // honeypot tripped — say nothing, do nothing
+
+    button.disabled = true;
+    status.dataset.tone = "";
+    status.textContent = "";
+
+    try {
+      const response = await fetch(`${APP_ORIGIN}/api/waitlist`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: data.get("email"),
+          consent: data.get("consent") === "on",
+        }),
+      });
+
+      if (response.ok) {
+        status.dataset.tone = "success";
+        status.textContent = "You're on the list — we'll email you at launch.";
+        form.reset();
+      } else if (response.status === 429) {
+        status.dataset.tone = "error";
+        status.textContent = "Too many attempts — try again in a few minutes.";
+      } else {
+        const body = await response.json().catch(() => null);
+        status.dataset.tone = "error";
+        status.textContent = body?.message ?? "Something went wrong — try again shortly.";
+      }
+    } catch {
+      status.dataset.tone = "error";
+      status.textContent = "Couldn't reach the server — check your connection and try again.";
+    } finally {
+      button.disabled = false;
+    }
+  });
+</script>

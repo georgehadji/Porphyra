@@ -1,49 +1,218 @@
 ---
 import Base from "../layouts/Base.astro";
-
-// Placeholder homepage — the real relevance -> mechanism -> confidence ->
-// action structure from the plan's Content plan section lands in Phase 1.
-// This exists now so the monorepo has an end-to-end buildable, deployable
-// page proving the token/build pipeline actually works.
+import WaitlistForm from "../components/WaitlistForm.astro";
 ---
 
 <Base
-  title="Porphyra — judgement, not volume"
-  description="Score every job posting before you apply. Encrypted by default."
+  title="Porphyra"
+  description="Score every job posting before you apply. Porphyra reads the JD against your CV, tells you honestly whether it's worth your time, and keeps your CV and reports encrypted — the server never reads them unless you ask it to."
 >
-  <main class="hero">
-    <p class="eyebrow">Coming soon</p>
-    <h1>Fewer applications. Better ones.</h1>
-    <p class="lede">
-      Porphyra scores every job posting against your profile before you spend an evening
-      tailoring a CV for it — and tells you honestly when a role isn't worth your time.
-    </p>
+  <main>
+    <section class="hero">
+      <p class="eyebrow">For job seekers everywhere — most of you remote</p>
+      <h1>Fewer applications. Better ones.</h1>
+      <p class="lede">
+        Porphyra reads a job posting against your CV and gives you a scored, honest read
+        before you spend an evening tailoring anything — including telling you when a role
+        isn't worth applying to.
+      </p>
+      <div id="waitlist">
+        <WaitlistForm />
+      </div>
+    </section>
+
+    <section class="problem">
+      <div class="section-inner">
+        <h2>Applying to everything is the same as applying to nothing</h2>
+        <p>
+          The average listing gets hundreds of applications within days. Sending fifty
+          generic ones doesn't beat that math — it just spends fifty evenings to lose fifty
+          times instead of once. Recruiters can tell. So can the ATS keyword filter before a
+          human ever opens your CV.
+        </p>
+        <p>
+          Porphyra starts from the opposite premise: read the posting properly, score it
+          honestly against what you actually bring, and only spend real effort — tailored
+          CV, cover letter, outreach — on the roles that clear the bar.
+        </p>
+      </div>
+    </section>
+
+    <section class="mechanism">
+      <div class="section-inner">
+        <h2>How it works</h2>
+        <ol class="steps">
+          <li>
+            <span class="step-num">1</span>
+            <div>
+              <h3>Paste a posting</h3>
+              <p>A URL or the raw text. Porphyra reads the full description, not just the title.</p>
+            </div>
+          </li>
+          <li>
+            <span class="step-num">2</span>
+            <div>
+              <h3>Get a scored, six-dimension read</h3>
+              <p>
+                Profile match, target alignment, compensation, cultural signals, red flags,
+                and growth trajectory — plus a check for whether the posting looks like it's
+                actually still open.
+              </p>
+            </div>
+          </li>
+          <li>
+            <span class="step-num">3</span>
+            <div>
+              <h3>Below 4.0? We say so</h3>
+              <p>
+                Porphyra actively recommends against applying to weak matches instead of
+                staying quiet about it. You always make the final call.
+              </p>
+            </div>
+          </li>
+          <li>
+            <span class="step-num">4</span>
+            <div>
+              <h3>Track it, or don't apply at all</h3>
+              <p>
+                Strong matches move into a pipeline with real states — evaluated, applied,
+                interview, offer — so you know where every application actually stands.
+              </p>
+            </div>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="security-teaser">
+      <div class="section-inner">
+        <h2>Your CV isn't the server's business until you say so</h2>
+        <p>
+          Your CV, evaluation reports and notes are encrypted in your browser before they
+          ever reach us — we store ciphertext we can't read. When you ask for an evaluation,
+          your CV and the job description are decrypted for that one request, sent to the AI
+          provider, and the result is re-encrypted before it's saved. We built the honest
+          version of "we take security seriously": a page that says exactly what's encrypted,
+          what isn't, and why.
+        </p>
+        <a class="link-arrow" href="/security">Read the full security model &rarr;</a>
+      </div>
+    </section>
+
+    <section class="pricing-teaser">
+      <div class="section-inner">
+        <h2>Start free. Upgrade when it's paying for itself.</h2>
+        <p>
+          A free tier that's actually useful for a real search, and one paid plan when you
+          want more evaluations and CV tailoring. No enterprise sales call.
+        </p>
+        <a class="link-arrow" href="/pricing">See pricing &rarr;</a>
+      </div>
+    </section>
+
+    <section class="final-cta">
+      <div class="section-inner">
+        <h2>Get early access</h2>
+        <p>We're building in the open. Join the list and we'll email you when it's ready.</p>
+        <WaitlistForm />
+      </div>
+    </section>
   </main>
 </Base>
 
 <style>
   .hero {
-    max-width: 40rem;
+    max-width: 44rem;
     margin: 0 auto;
-    padding: var(--p-space-32) var(--p-space-6);
+    padding: var(--p-space-24) var(--p-space-6) var(--p-space-16);
     text-align: center;
   }
   .eyebrow {
     font-size: var(--p-text-sm);
     font-weight: 600;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--color-brand-text);
+    margin: 0;
   }
   h1 {
     font-family: var(--p-font-display);
-    font-size: var(--p-text-5xl);
+    font-size: var(--p-text-6xl);
     line-height: var(--p-leading-tight);
     margin: var(--p-space-4) 0;
     color: var(--p-porphyra-900);
   }
   .lede {
-    font-size: var(--p-text-lg);
+    font-size: var(--p-text-xl);
     color: var(--color-muted);
+    margin: 0 auto;
+    max-width: 36rem;
+  }
+
+  .section-inner {
+    max-width: 44rem;
+    margin: 0 auto;
+    padding: var(--p-space-16) var(--p-space-6);
+  }
+  .problem,
+  .pricing-teaser {
+    background: var(--color-surface-sunken);
+  }
+  h2 {
+    font-family: var(--p-font-display);
+    font-size: var(--p-text-3xl);
+    color: var(--p-porphyra-900);
+    margin: 0 0 var(--p-space-4);
+  }
+  .problem p,
+  .security-teaser p,
+  .pricing-teaser p,
+  .final-cta p {
+    color: var(--color-muted);
+    font-size: var(--p-text-lg);
+  }
+
+  .steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--p-space-8);
+  }
+  .steps li {
+    display: flex;
+    gap: var(--p-space-4);
+  }
+  .step-num {
+    flex-shrink: 0;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    background: var(--color-brand-soft);
+    color: var(--color-brand-text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+  }
+  .steps h3 {
+    margin: 0 0 var(--p-space-1);
+    font-size: var(--p-text-lg);
+  }
+  .steps p {
+    margin: 0;
+    color: var(--color-muted);
+  }
+
+  .link-arrow {
+    display: inline-block;
+    margin-top: var(--p-space-2);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .final-cta {
+    text-align: center;
   }
 </style>

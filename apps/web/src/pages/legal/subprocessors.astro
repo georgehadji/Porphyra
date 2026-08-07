@@ -1,0 +1,35 @@
+---
+import Legal from "../../layouts/Legal.astro";
+
+const subprocessors = [
+  { name: "Anthropic", purpose: "AI evaluation (default provider)", sees: "Plaintext CV + JD text, for the duration of one consented evaluation request only." },
+  { name: "Stripe", purpose: "Payment processing", sees: "Billing details. Never your CV, reports, or vault content." },
+  { name: "Resend", purpose: "Transactional email (verification, password reset)", sees: "Email address and message content of the transactional email itself." },
+  { name: "Hosting provider (VPS)", purpose: "Infrastructure", sees: "Encrypted data at rest and in transit; no application-level access." },
+];
+---
+
+<Legal
+  title="Subprocessors"
+  description="Every third party in the Porphyra pipeline, and exactly what each one can see."
+  lastUpdated="2026-08-07"
+>
+  <p>
+    Every organization that touches any part of delivering Porphyra, and what it can and
+    can't see. We'll email active accounts at least 14 days before adding a new one.
+  </p>
+
+  <table>
+    <thead><tr><th>Subprocessor</th><th>Purpose</th><th>What it can see</th></tr></thead>
+    <tbody>
+      {subprocessors.map((s) => (
+        <tr><td>{s.name}</td><td>{s.purpose}</td><td>{s.sees}</td></tr>
+      ))}
+    </tbody>
+  </table>
+
+  <p>
+    Full names, addresses, and DPAs for each entity are compiled ahead of launch — this
+    table is accurate on function and data access today.
+  </p>
+</Legal>

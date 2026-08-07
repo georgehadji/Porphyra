@@ -1,0 +1,98 @@
+---
+import Legal from "../../layouts/Legal.astro";
+---
+
+<Legal
+  title="Privacy Policy"
+  description="What Porphyra collects, why, and your rights over it."
+  lastUpdated="2026-08-07"
+>
+  <p>
+    Porphyra ("we", "us") operates a job-search platform. This policy explains what we
+    collect, why, and how it interacts with the end-to-end encryption described on our
+    <a href="/security">security page</a>, which takes precedence on any technical detail.
+  </p>
+
+  <h2>What we collect</h2>
+  <h3>Content you encrypt yourself</h3>
+  <p>
+    Your CV, evaluation reports, cover letters, interview notes, contacts, and any job
+    description text you paste in are encrypted in your browser before they reach us. We
+    store ciphertext. We cannot read this content, and no engineer, support process, or
+    legal request to us can produce the plaintext without your password or recovery key —
+    see <a href="/security">how the encryption works</a> for the technical detail.
+  </p>
+  <h3>Structural metadata (not encrypted)</h3>
+  <p>
+    Application status, dates, the numeric score, ATS vendor, source portal, and your plan
+    tier are stored in clear — this is what drives your pipeline view and is not
+    individually sensitive. Company and role names are stored as a one-way blind index (see
+    the security page), not in clear and not reversible by us.
+  </p>
+  <h3>Account information</h3>
+  <p>
+    Email address, authentication data (password hash, not the password itself; 2FA status),
+    and billing information if you're on a paid plan (handled by Stripe — we don't store
+    card numbers).
+  </p>
+  <h3>Behavioral analytics</h3>
+  <p>
+    Feature usage, page views, session length, error rates, and conversion events — never
+    the content of what you're evaluating. Web analytics (self-hosted Umami) is cookieless
+    and doesn't use persistent identifiers.
+  </p>
+
+  <h2>Why we collect it</h2>
+  <ul>
+    <li>To provide the service — evaluating postings, tracking your pipeline, generating documents.</li>
+    <li>To bill you, if you're on a paid plan.</li>
+    <li>To improve the product — which features get used, where people get stuck.</li>
+    <li>To secure the platform — audit logs, abuse and rate-limit detection.</li>
+  </ul>
+
+  <h2>AI processing</h2>
+  <p>
+    When you request an evaluation, your CV and the job description are decrypted
+    client-side and sent, over TLS, to our AI provider (Anthropic by default) for that one
+    request. We do not permit that provider to train on your data, we don't log the request
+    body, and the result is re-encrypted before it's stored. This only happens when you take
+    the action — never automatically or in the background.
+  </p>
+
+  <h2>Who we share data with</h2>
+  <p>
+    See our <a href="/legal/subprocessors">subprocessors list</a> for every third party that
+    touches any part of the pipeline (hosting, email delivery, payment processing, AI
+    inference) and what each one can and can't see.
+  </p>
+
+  <h2>Your rights</h2>
+  <p>
+    Export your data, correct it, or permanently delete your account and everything in it,
+    from account settings at any time. If you're in the EU/EEA/UK, you have rights under
+    GDPR (access, rectification, erasure, portability, objection); if you're in California,
+    you have rights under the CCPA/CPRA. Email
+    <a href="mailto:privacy@porphyra.example">privacy@porphyra.example</a> for anything the
+    settings page doesn't cover.
+  </p>
+
+  <h2>Retention</h2>
+  <p>
+    Active account data is kept until you delete it. Deleted-account data is purged from
+    primary storage within 30 days and from encrypted backups on their normal rotation
+    schedule (documented in full once Phase 6's backup runbook ships).
+  </p>
+
+  <h2>Legal basis (GDPR)</h2>
+  <p>
+    Contract performance for providing the service you signed up for; legitimate interest for
+    security and product analytics; consent for marketing email (the waitlist, and anything
+    opt-in afterward) — withdrawable at any time.
+  </p>
+
+  <h2>Children</h2>
+  <p>Porphyra is not directed at anyone under 16 and we don't knowingly collect their data.</p>
+
+  <h2>Changes</h2>
+  <p>Material changes get emailed to active accounts before they take effect.</p>
+</Legal>

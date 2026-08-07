@@ -1,0 +1,100 @@
+---
+import Base from "../layouts/Base.astro";
+---
+
+<Base
+  title="How it works"
+  description="What actually happens when you evaluate a job posting with Porphyra: the six-dimension score, the posting-legitimacy check, and the pipeline that tracks it afterward."
+>
+  <main class="page">
+    <header class="page-header">
+      <h1>How it works</h1>
+      <p>No magic, no black box. Here's what actually happens to a job posting.</p>
+    </header>
+
+    <section>
+      <h2>1. You give it a posting</h2>
+      <p>
+        Paste a URL or the raw description. Porphyra reads the whole thing — requirements,
+        responsibilities, team shape, whatever the company chose to publish — not just the
+        title and a skills list.
+      </p>
+    </section>
+
+    <section>
+      <h2>2. It scores six dimensions</h2>
+      <dl class="dims">
+        <div><dt>Profile match</dt><dd>How your CV's skills and experience line up against what the role actually asks for.</dd></div>
+        <div><dt>Target alignment</dt><dd>Fit against the roles and signals you told Porphyra you're aiming for — not a generic "AI/tech" bucket, whatever you're actually targeting.</dd></div>
+        <div><dt>Compensation</dt><dd>Advertised range weighed against company type and how reliable that kind of range usually is — a startup's "up to" figure gets read differently than a public company's structured band.</dd></div>
+        <div><dt>Cultural signals</dt><dd>Evidence for or against the things you said matter to you — team size, remote policy, stage, whatever you configured.</dd></div>
+        <div><dt>Red flags</dt><dd>Contradictions, unrealistic asks, and anything that reads as a structural problem rather than a stretch.</dd></div>
+        <div><dt>Growth trajectory</dt><dd>Whether the role looks like it goes somewhere, or is a well-paid dead end.</dd></div>
+      </dl>
+      <p>
+        These six roll up into one global score — a judgment call weighing all of them, not
+        a plain average. A posting can score high on paper and still get capped hard on
+        culture if the evidence contradicts what you said you need; the report says so
+        explicitly instead of burying it in a number.
+      </p>
+    </section>
+
+    <section>
+      <h2>3. It checks whether the posting is even real</h2>
+      <p>
+        Separately from the score: posting age, whether the apply button still works, JD
+        specificity, whether it's been reposted repeatedly, recent layoff news at the
+        company. Three tiers — high confidence, proceed with caution, suspicious — presented
+        as information, never as an accusation. Ghost postings and evergreen pipelines both
+        exist; the signals help you prioritize your time, not judge the company.
+      </p>
+    </section>
+
+    <section>
+      <h2>4. Below 4.0, we say so</h2>
+      <p>
+        4.5 and up: strong match, apply now. 4.0–4.4: good match, worth it. 3.5–3.9: decent,
+        apply only if you have a specific reason. Below 3.5: Porphyra actively recommends
+        against applying, not just a quiet omission of encouragement. You can always override
+        it — it's your search — but the default is honesty, not flattery.
+      </p>
+    </section>
+
+    <section>
+      <h2>5. Strong matches move into a pipeline</h2>
+      <p>
+        Evaluated → Applied → Responded → Interview → Offer → Hired, with Rejected,
+        Discarded and Skip as exits. Every state change is real, not cosmetic — a rejected
+        application can't quietly become "interviewing" again, and a hired one is done. You
+        always know exactly where things stand across every company you're talking to.
+      </p>
+    </section>
+
+    <section class="cta">
+      <a href="/#waitlist">Get early access &rarr;</a>
+    </section>
+  </main>
+</Base>
+
+<style>
+  .page { max-width: 42rem; margin: 0 auto; padding: var(--p-space-16) var(--p-space-6); }
+  .page-header { margin-bottom: var(--p-space-12); }
+  .page-header h1 { font-family: var(--p-font-display); font-size: var(--p-text-5xl); color: var(--p-porphyra-900); margin: 0 0 var(--p-space-3); }
+  .page-header p { font-size: var(--p-text-lg); color: var(--color-muted); }
+  section { margin-bottom: var(--p-space-12); }
+  h2 { font-family: var(--p-font-display); font-size: var(--p-text-2xl); color: var(--p-porphyra-900); }
+  p { color: var(--color-muted); font-size: var(--p-text-base); }
+  .dims { display: grid; gap: var(--p-space-4); margin: var(--p-space-6) 0; }
+  .dims dt { font-weight: 600; color: var(--color-foreground); }
+  .dims dd { margin: var(--p-space-1) 0 0; color: var(--color-muted); }
+  .cta { text-align: center; }
+  .cta a {
+    display: inline-block;
+    background: var(--button-primary-bg);
+    color: var(--button-primary-fg);
+    padding: var(--button-padding-y) var(--button-padding-x);
+    border-radius: var(--button-radius);
+    text-decoration: none;
+    font-weight: 600;
+  }
+</style>

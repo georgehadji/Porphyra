@@ -1,12 +1,24 @@
 ---
 import "@porphyra/tokens/css";
+import Footer from "../components/Footer.astro";
+import Nav from "../components/Nav.astro";
 
 interface Props {
   title: string;
   description: string;
+  /** Legal pages and the waitlist thank-you screen don't need the marketing
+   * article-schema/OG treatment a landing page wants. */
+  noIndex?: boolean;
 }
 
-const { title, description } = Astro.props;
+const { title, description, noIndex = false } = Astro.props;
+const fullTitle = title === "Porphyra" ? title : `${title} — Porphyra`;
+
+// Umami is opt-in via env — a missing PUBLIC_UMAMI_WEBSITE_ID means no
+// analytics script ships at all (e.g. every local dev build), rather than
+// pointing at a placeholder that 404s.
+const umamiUrl = import.meta.env.PUBLIC_UMAMI_URL;
+const umamiWebsiteId = import.meta.env.PUBLIC_UMAMI_WEBSITE_ID;
 ---
 
 <!doctype html>
@@ -15,11 +27,21 @@ const { title, description } = Astro.props;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <title>{title}</title>
+    <title>{fullTitle}</title>
     <meta name="description" content={description} />
+    {noIndex && <meta name="robots" content="noindex, nofollow" />}
     <meta name="color-scheme" content="light" />
-    <!-- Light theme only, by product decision — no dark meta variant. -->
     <meta name="theme-color" content="#FBF8F5" />
+
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    {umamiUrl && umamiWebsiteId && (
+      <script is:inline defer src={`${umamiUrl}/script.js`} data-website-id={umamiWebsiteId}></script>
+    )}
+
     <style>
       body {
         margin: 0;
@@ -28,9 +50,17 @@ const { title, description } = Astro.props;
         font-family: var(--p-font-sans);
         line-height: var(--p-leading-normal);
       }
+      main {
+        display: block;
+      }
+      a {
+        color: var(--color-brand-text);
+      }
     </style>
   </head>
   <body>
+    <Nav />
     <slot />
+    <Footer />
   </body>
 </html>

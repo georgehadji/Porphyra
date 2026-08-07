@@ -1,0 +1,40 @@
+---
+import Base from "../layouts/Base.astro";
+---
+
+<Base title="Contact" description="How to reach Porphyra — general, security, and privacy.">
+  <main class="page">
+    <header class="page-header">
+      <h1>Contact</h1>
+      <p>No live chat yet — email gets a real answer, not a bot.</p>
+    </header>
+
+    <dl class="contacts">
+      <div>
+        <dt>General</dt>
+        <dd><a href="mailto:hello@porphyra.example">hello@porphyra.example</a></dd>
+      </div>
+      <div>
+        <dt>Security reports</dt>
+        <dd>
+          <a href="mailto:security@porphyra.example">security@porphyra.example</a> —
+          see <a href="/.well-known/security.txt">security.txt</a> for our disclosure policy.
+        </dd>
+      </div>
+      <div>
+        <dt>Privacy / data requests</dt>
+        <dd><a href="mailto:privacy@porphyra.example">privacy@porphyra.example</a></dd>
+      </div>
+    </dl>
+  </main>
+</Base>
+
+<style>
+  .page { max-width: 36rem; margin: 0 auto; padding: var(--p-space-16) var(--p-space-6); }
+  .page-header { margin-bottom: var(--p-space-10); }
+  .page-header h1 { font-family: var(--p-font-display); font-size: var(--p-text-5xl); color: var(--p-porphyra-900); margin: 0 0 var(--p-space-2); }
+  .page-header p { color: var(--color-muted); font-size: var(--p-text-lg); }
+  .contacts { display: flex; flex-direction: column; gap: var(--p-space-6); }
+  dt { font-weight: 600; margin-bottom: var(--p-space-1); }
+  dd { margin: 0; color: var(--color-muted); }
+</style>

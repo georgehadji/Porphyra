@@ -1,0 +1,37 @@
+---
+import Legal from "../../layouts/Legal.astro";
+---
+
+<Legal
+  title="Cookie Policy"
+  description="Porphyra's marketing site sets no tracking cookies. Here's exactly what we do use."
+  lastUpdated="2026-08-07"
+>
+  <p>
+    Short version: our marketing site (the pages you're reading right now) sets no cookies
+    and needs no consent banner, because there's nothing to consent to.
+  </p>
+
+  <h2>Marketing site (porphyra.example)</h2>
+  <table>
+    <thead><tr><th>What</th><th>Type</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td>Umami analytics</td><td>Cookieless</td><td>Aggregate page views and referrers — no persistent identifier, self-hosted, never shared with a third party.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>The app (app.porphyra.example)</h2>
+  <p>
+    Once you have an account, the app sets one strictly-necessary session cookie to keep you
+    logged in. It's not used for tracking or advertising, and it's not shared with any third
+    party. Under GDPR/ePrivacy, strictly-necessary cookies don't require consent — but we're
+    telling you it exists anyway.
+  </p>
+
+  <h2>Third parties</h2>
+  <p>
+    Stripe (billing) and our AI provider may set their own cookies or use their own
+    tracking when you interact with their embedded flows directly — see their respective
+    privacy policies. Full list in our <a href="/legal/subprocessors">subprocessors page</a>.
+  </p>
+</Legal>

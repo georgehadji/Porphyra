@@ -1,0 +1,49 @@
+---
+import { getCollection, render } from "astro:content";
+import Base from "../../layouts/Base.astro";
+
+export async function getStaticPaths() {
+  const entries = await getCollection("segments");
+  return entries.map((entry) => ({
+    params: { slug: entry.id },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+---
+
+<Base title={entry.data.name} description={entry.data.subhead}>
+  <main class="page" data-theme={entry.data.theme}>
+    <header class="page-header">
+      <h1>{entry.data.headline}</h1>
+      <p>{entry.data.subhead}</p>
+    </header>
+    <div class="content">
+      <Content />
+    </div>
+    <div class="cta">
+      <a href="/#waitlist">Get early access &rarr;</a>
+    </div>
+  </main>
+</Base>
+
+<style>
+  .page { max-width: 42rem; margin: 0 auto; padding: var(--p-space-16) var(--p-space-6); }
+  .page-header { margin-bottom: var(--p-space-10); text-align: center; }
+  .page-header h1 { font-family: var(--p-font-display); font-size: var(--p-text-4xl); color: var(--p-porphyra-900); margin: 0 0 var(--p-space-3); }
+  .page-header p { font-size: var(--p-text-lg); color: var(--color-muted); }
+  .content { color: var(--color-muted); }
+  .content :global(h2) { font-family: var(--p-font-display); color: var(--p-porphyra-900); }
+  .cta { text-align: center; margin-top: var(--p-space-10); }
+  .cta a {
+    display: inline-block;
+    background: var(--button-primary-bg);
+    color: var(--button-primary-fg);
+    padding: var(--button-padding-y) var(--button-padding-x);
+    border-radius: var(--button-radius);
+    text-decoration: none;
+    font-weight: 600;
+  }
+</style>

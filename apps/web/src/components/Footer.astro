@@ -1,0 +1,129 @@
+---
+const columns = [
+  {
+    heading: "Product",
+    links: [
+      { href: "/how-it-works", label: "How it works" },
+      { href: "/pricing", label: "Pricing" },
+      { href: "/security", label: "Security" },
+      { href: "/changelog", label: "Changelog" },
+    ],
+  },
+  {
+    heading: "Company",
+    links: [
+      { href: "/about", label: "About" },
+      { href: "/contact", label: "Contact" },
+    ],
+  },
+  {
+    heading: "Legal",
+    links: [
+      { href: "/legal/privacy", label: "Privacy" },
+      { href: "/legal/terms", label: "Terms" },
+      { href: "/legal/cookies", label: "Cookies" },
+      { href: "/legal/dpa", label: "DPA" },
+      { href: "/legal/subprocessors", label: "Subprocessors" },
+      { href: "/legal/refunds", label: "Refunds" },
+    ],
+  },
+];
+const year = new Date().getFullYear();
+---
+
+<footer class="footer">
+  <div class="footer__inner">
+    <div class="footer__brand">
+      <span class="footer__wordmark">Porphyra</span>
+      <p>Judgement, not volume.</p>
+    </div>
+    <div class="footer__columns">
+      {columns.map((col) => (
+        <div>
+          <h3>{col.heading}</h3>
+          <ul>
+            {col.links.map((l) => (
+              <li><a href={l.href}>{l.label}</a></li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  </div>
+  <div class="footer__base">
+    <p>&copy; {year} Porphyra. Built on open-source foundations — see our <a href="https://github.com/santifer/jobber">acknowledgements</a>.</p>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    border-top: 1px solid var(--color-border);
+    background: var(--color-surface-sunken);
+    margin-top: var(--p-space-32);
+  }
+  .footer__inner {
+    max-width: 72rem;
+    margin: 0 auto;
+    padding: var(--p-space-16) var(--p-space-6) var(--p-space-8);
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: var(--p-space-12);
+  }
+  .footer__wordmark {
+    font-family: var(--p-font-display);
+    font-size: var(--p-text-2xl);
+    color: var(--p-porphyra-900);
+  }
+  .footer__brand p {
+    color: var(--color-muted);
+    margin-top: var(--p-space-2);
+  }
+  .footer__columns {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--p-space-8);
+  }
+  .footer__columns h3 {
+    font-size: var(--p-text-sm);
+    font-weight: 600;
+    color: var(--color-foreground);
+    margin: 0 0 var(--p-space-3);
+  }
+  .footer__columns ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--p-space-2);
+  }
+  .footer__columns a {
+    color: var(--color-muted);
+    text-decoration: none;
+    font-size: var(--p-text-sm);
+  }
+  .footer__columns a:hover {
+    color: var(--color-brand-text);
+  }
+  .footer__base {
+    border-top: 1px solid var(--color-border);
+    padding: var(--p-space-6);
+    text-align: center;
+  }
+  .footer__base p {
+    color: var(--color-faint);
+    font-size: var(--p-text-xs);
+    margin: 0;
+  }
+  .footer__base a {
+    color: var(--color-faint);
+  }
+  @media (max-width: 640px) {
+    .footer__inner {
+      grid-template-columns: 1fr;
+    }
+    .footer__columns {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+</style>

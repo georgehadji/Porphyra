@@ -1,0 +1,35 @@
+---
+import Legal from "../../layouts/Legal.astro";
+---
+
+<Legal
+  title="Security Disclosure Policy"
+  description="How to report a vulnerability in Porphyra, and what to expect from us."
+  lastUpdated="2026-08-07"
+>
+  <p>
+    Found a security issue? Email
+    <a href="mailto:security@porphyra.example">security@porphyra.example</a> with as much
+    detail as you can — steps to reproduce, affected component, and impact. See
+    <a href="/.well-known/security.txt">security.txt</a> for the machine-readable version.
+  </p>
+
+  <h2>What to expect</h2>
+  <ul>
+    <li>Acknowledgement within 3 business days.</li>
+    <li>An honest assessment of severity and a rough timeline, once triaged.</li>
+    <li>Credit in our changelog, if you'd like it, once the fix ships.</li>
+  </ul>
+
+  <h2>Please don't</h2>
+  <ul>
+    <li>Access, modify, or exfiltrate another user's data — encrypted vault content is off-limits even during testing.</li>
+    <li>Run automated scanners against production without asking first.</li>
+    <li>Publicly disclose before we've had a reasonable chance to fix it.</li>
+  </ul>
+
+  <p>
+    Good-faith security research under this policy won't result in legal action from us.
+    A formal bug-bounty program (rewards, scope, safe-harbor terms) is planned for Phase 6.
+  </p>
+</Legal>

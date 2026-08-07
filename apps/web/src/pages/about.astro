@@ -1,0 +1,73 @@
+---
+import Base from "../layouts/Base.astro";
+---
+
+<Base
+  title="About"
+  description="Why Porphyra exists, and what 'judgement, not volume' actually means in practice."
+>
+  <main class="page">
+    <header class="page-header">
+      <h1>About Porphyra</h1>
+    </header>
+
+    <section>
+      <p>
+        Job search advice has converged on volume: apply everywhere, let the numbers work
+        for you. It doesn't, really — a posting with three hundred applicants doesn't get
+        fairer because you're applicant three hundred and one. What actually moves the
+        needle is targeting: knowing which roles are worth real effort before you spend the
+        evening on a tailored CV and a cover letter nobody will read past the first
+        paragraph.
+      </p>
+      <p>
+        Porphyra is built around that idea. Score honestly, recommend against weak matches
+        instead of staying quiet about them, and treat your CV and search data as something
+        we're custodians of, not a resource to mine.
+      </p>
+    </section>
+
+    <section>
+      <h2>Where the name comes from</h2>
+      <p>
+        Πορφύρα — Greek for both the murex sea snail and the Tyrian purple dye extracted
+        from it. It took roughly twelve thousand snails to produce a gram and a half of dye,
+        which is why it was reserved for what had actually been earned rather than produced
+        at scale. That's the whole thesis, in one word.
+      </p>
+    </section>
+
+    <section>
+      <h2>What we're not</h2>
+      <p>
+        We're not a browser extension that auto-fills forms without reading them, and we
+        never submit an application on your behalf — you always press the final button. See
+        <a href="/how-it-works">how it works</a> and <a href="/security">how the encryption
+        works</a> for the specifics.
+      </p>
+    </section>
+
+    <section class="cta">
+      <a href="/#waitlist">Get early access &rarr;</a>
+    </section>
+  </main>
+</Base>
+
+<style>
+  .page { max-width: 42rem; margin: 0 auto; padding: var(--p-space-16) var(--p-space-6); }
+  .page-header { margin-bottom: var(--p-space-8); }
+  .page-header h1 { font-family: var(--p-font-display); font-size: var(--p-text-5xl); color: var(--p-porphyra-900); margin: 0; }
+  section { margin-bottom: var(--p-space-10); }
+  h2 { font-family: var(--p-font-display); font-size: var(--p-text-2xl); color: var(--p-porphyra-900); margin-bottom: var(--p-space-3); }
+  p { color: var(--color-muted); font-size: var(--p-text-lg); }
+  .cta { text-align: center; }
+  .cta a {
+    display: inline-block;
+    background: var(--button-primary-bg);
+    color: var(--button-primary-fg);
+    padding: var(--button-padding-y) var(--button-padding-x);
+    border-radius: var(--button-radius);
+    text-decoration: none;
+    font-weight: 600;
+  }
+</style>

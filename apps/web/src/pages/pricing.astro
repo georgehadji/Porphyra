@@ -1,0 +1,154 @@
+---
+import Base from "../layouts/Base.astro";
+
+// Provisional numbers — no final pricing decision has been made yet
+// (Stripe billing itself lands in Phase 4). Easy to find/replace here once
+// a real decision exists; kept as a realistic figure rather than a bare
+// placeholder so the page reads credibly in the meantime.
+const PRO_PRICE = "$14";
+
+const free = [
+  "5 evaluations a month",
+  "Full application pipeline tracker",
+  "1 CV version",
+  "Posting legitimacy checks",
+  "Encrypted vault for your CV and reports",
+];
+
+const pro = [
+  "Unlimited evaluations",
+  "Unlimited CV versions, tailored per role",
+  "Cover letter drafts",
+  "Interview prep tools",
+  "Priority support",
+  "Everything in Free",
+];
+---
+
+<Base
+  title="Pricing"
+  description="Free tier that's actually useful, one paid plan when you want more. No enterprise sales call, no seat minimums."
+>
+  <main class="page">
+    <header class="page-header">
+      <h1>Simple, honest pricing</h1>
+      <p>Start free. Upgrade when it's paying for itself, not before.</p>
+    </header>
+
+    <div class="plans">
+      <div class="plan">
+        <h2>Free</h2>
+        <p class="price">$0<span>/month</span></p>
+        <ul>
+          {free.map((f) => <li>{f}</li>)}
+        </ul>
+        <a href="/#waitlist" class="plan-cta plan-cta--secondary">Get early access</a>
+      </div>
+
+      <div class="plan plan--pro">
+        <p class="plan-badge">Most searches need this</p>
+        <h2>Pro</h2>
+        <p class="price">{PRO_PRICE}<span>/month</span></p>
+        <ul>
+          {pro.map((f) => <li>{f}</li>)}
+        </ul>
+        <a href="/#waitlist" class="plan-cta">Get early access</a>
+      </div>
+    </div>
+
+    <section class="faq">
+      <h2>Questions</h2>
+      <div class="faq-item">
+        <h3>Why isn't there a Team plan yet?</h3>
+        <p>
+          It's coming — bootcamps, universities and career coaches ask for it most. We'd
+          rather ship it right than ship it early. If that's you, say so on the waitlist form
+          and we'll reach out first.
+        </p>
+      </div>
+      <div class="faq-item">
+        <h3>What happens to my data if I cancel?</h3>
+        <p>
+          Your vault stays encrypted and accessible on the Free tier — cancelling downgrades
+          your evaluation quota, it doesn't delete anything. You can export or permanently
+          delete your data at any time from account settings.
+        </p>
+      </div>
+      <div class="faq-item">
+        <h3>Do you ever sell or share my data?</h3>
+        <p>
+          No. We can't read your CV or reports in the first place — see
+          <a href="/security">how the encryption works</a>. Behavioral analytics (what
+          features get used, not what's in your documents) are covered in our
+          <a href="/legal/privacy">privacy policy</a>.
+        </p>
+      </div>
+    </section>
+  </main>
+</Base>
+
+<style>
+  .page { max-width: 56rem; margin: 0 auto; padding: var(--p-space-16) var(--p-space-6); }
+  .page-header { text-align: center; margin-bottom: var(--p-space-12); }
+  .page-header h1 { font-family: var(--p-font-display); font-size: var(--p-text-5xl); color: var(--p-porphyra-900); margin: 0 0 var(--p-space-3); }
+  .page-header p { font-size: var(--p-text-lg); color: var(--color-muted); }
+
+  .plans {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--p-space-6);
+    margin-bottom: var(--p-space-16);
+  }
+  .plan {
+    border: 1px solid var(--color-border);
+    border-radius: var(--card-radius);
+    padding: var(--p-space-8);
+    background: var(--color-surface);
+  }
+  .plan--pro {
+    border-color: var(--color-brand);
+    border-width: 2px;
+    position: relative;
+  }
+  .plan-badge {
+    position: absolute;
+    top: -0.75rem;
+    left: var(--p-space-6);
+    background: var(--color-brand);
+    color: var(--p-neutral-0);
+    font-size: var(--p-text-xs);
+    font-weight: 600;
+    padding: var(--p-space-1) var(--p-space-3);
+    border-radius: var(--p-radius-full);
+  }
+  .plan h2 { font-family: var(--p-font-display); font-size: var(--p-text-2xl); margin: 0 0 var(--p-space-2); }
+  .price { font-size: var(--p-text-4xl); font-weight: 700; color: var(--p-porphyra-900); margin: 0 0 var(--p-space-6); }
+  .price span { font-size: var(--p-text-base); font-weight: 400; color: var(--color-muted); }
+  .plan ul { list-style: none; margin: 0 0 var(--p-space-8); padding: 0; display: flex; flex-direction: column; gap: var(--p-space-3); }
+  .plan li { padding-left: var(--p-space-6); position: relative; color: var(--color-foreground); }
+  .plan li::before { content: "✓"; position: absolute; left: 0; color: var(--color-success); font-weight: 700; }
+  .plan-cta {
+    display: block;
+    text-align: center;
+    padding: var(--button-padding-y) var(--button-padding-x);
+    border-radius: var(--button-radius);
+    text-decoration: none;
+    font-weight: 600;
+    background: var(--button-primary-bg);
+    color: var(--button-primary-fg);
+  }
+  .plan-cta--secondary {
+    background: var(--color-surface);
+    color: var(--color-foreground);
+    border: 1px solid var(--color-border-strong);
+  }
+
+  .faq h2 { font-family: var(--p-font-display); font-size: var(--p-text-2xl); color: var(--p-porphyra-900); margin-bottom: var(--p-space-6); }
+  .faq-item { margin-bottom: var(--p-space-6); }
+  .faq-item h3 { font-size: var(--p-text-lg); margin: 0 0 var(--p-space-2); }
+  .faq-item p { color: var(--color-muted); margin: 0; }
+
+  @media (max-width: 640px) {
+    .plans { grid-template-columns: 1fr; }
+  }
+</style>

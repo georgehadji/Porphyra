@@ -1,0 +1,10 @@
+Contact: mailto:security@porphyra.example
+Expires: 2027-08-07T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://porphyra.example/.well-known/security.txt
+Policy: https://porphyra.example/legal/security-disclosure
+
+# We take vulnerability reports seriously and will acknowledge within 3
+# business days. Please do not publicly disclose before we've had a chance
+# to respond — see the disclosure policy above for the full process
+# (added alongside the rest of Phase 6's hardening work).

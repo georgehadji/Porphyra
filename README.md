@@ -52,6 +52,22 @@ in `packages/crypto` and the [approved plan](#) (ask in the repo if you need the
 pnpm --filter @porphyra/crypto test   # round-trip, wrong-password-rejection, blind-index tests
 ```
 
+## Marketing site (apps/web)
+
+15 static pages: home, how-it-works, pricing, security, about, changelog, contact, six legal
+pages, and a segment-landing-page framework (`src/content.config.ts` + `/for/[slug]`) — see
+`src/content/segments/example.md` for how to add a real one. The waitlist form POSTs
+cross-origin to `apps/app`'s `/api/waitlist` (validated, honeypot-protected, rate-limited),
+since the marketing site itself has no server runtime by design.
+
+**Deliberately deferred, not forgotten:** `/guides/*` (SEO content — needs an ongoing content
+pipeline, not a foundation task) and `/status` (needs something actually deployed to monitor).
+Both can be added without touching anything else.
+
+**Blocked on one decision:** the domain. Every legal page, the Caddyfile, and `security.txt`
+use `porphyra.example` as a placeholder — find/replace once chosen, then Phase 1 can go live
+per `infra/README.md`.
+
 ## Getting started
 
 Requires Node ≥20, pnpm 9.15+, Docker.
@@ -80,7 +96,7 @@ Each phase ends deployable.
 | # | Phase | Status |
 |---|---|---|
 | 0 | Foundation — monorepo, tokens, UI kit, core logic, crypto, infra | ✅ Done |
-| 1 | Marketing site — full content, legal pages, segment framework, live on the VPS | Next |
+| 1 | Marketing site — content, legal pages, segment framework, waitlist | ✅ Built — blocked on domain choice for live deploy |
 | 2 | Auth + crypto — Better Auth, 2FA, OAuth, vault, onboarding | Planned |
 | 3 | Core pipeline — evaluate → track → tailor CV → PDF | Planned |
 | 4 | Billing — Stripe free + Pro | Planned |

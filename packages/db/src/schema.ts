@@ -28,6 +28,25 @@ export const usersPlaceholder = pgTable("user", {
   id: text("id").primaryKey(),
 });
 
+/**
+ * Pre-launch waitlist (Phase 1, apps/web's marketing site). Deliberately NOT
+ * linked to `usersPlaceholder` — a waitlist signup precedes account
+ * creation and most rows will never become a user. Email is stored in clear
+ * (not vault content — no encryption story applies before there's an
+ * account or a DEK to encrypt it with).
+ */
+export const waitlistEntries = pgTable(
+  "waitlist_entries",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    email: text("email").notNull().unique(),
+    consentedAt: timestamp("consented_at", { withTimezone: true }).notNull(),
+    source: text("source"), // e.g. "marketing_home", "for_designers" — which page/segment
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("waitlist_entries_created_idx").on(table.createdAt)],
+);
+
 export const applicationStateEnum = pgEnum("application_state", [
   "evaluated",
   "applied",

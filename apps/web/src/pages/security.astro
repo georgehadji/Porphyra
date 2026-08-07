@@ -1,0 +1,192 @@
+---
+import Base from "../layouts/Base.astro";
+
+const encrypted = [
+  "Your CV",
+  "Evaluation reports",
+  "Cover letter drafts",
+  "Interview notes",
+  "Saved contacts",
+  "Job description text you paste in",
+  "Your own AI provider key, if you add one",
+];
+
+const clear = [
+  { item: "Application status", why: "Needed to build your pipeline view and funnel stats." },
+  { item: "Dates (applied, responded, etc.)", why: "Same reason — drives the timeline and reminders." },
+  { item: "The numeric score", why: "Needed for sorting and filtering your pipeline." },
+  { item: "ATS vendor and source portal", why: "Aggregate product analytics — which channels work — not about you specifically." },
+  { item: "Plan tier", why: "Needed to enforce quotas." },
+];
+---
+
+<Base
+  title="Security"
+  description="What's encrypted, what isn't, and why — the honest version of a security page. Key hierarchy, consented AI evaluation, and what happens if you lose your recovery key."
+>
+  <main class="page">
+    <header class="page-header">
+      <h1>What's actually encrypted</h1>
+      <p>
+        Most security pages promise more than the architecture actually delivers. This one
+        doesn't. Here's the real split — and where it forced a genuine tradeoff.
+      </p>
+    </header>
+
+    <section>
+      <h2>The honest split</h2>
+      <div class="split">
+        <div class="split-col split-col--encrypted">
+          <h3>Encrypted client-side</h3>
+          <p class="split-note">The server stores ciphertext it cannot read.</p>
+          <ul>{encrypted.map((e) => <li>{e}</li>)}</ul>
+        </div>
+        <div class="split-col">
+          <h3>Stored in clear</h3>
+          <p class="split-note">Structural data the product needs to function.</p>
+          <table>
+            <tbody>
+              {clear.map((c) => (
+                <tr><td>{c.item}</td><td>{c.why}</td></tr>
+              ))}
+            </tbody>
+          </table>
+          <p class="split-note">
+            Company and role names get a <em>blind index</em> — a one-way hash we can match
+            for filtering and duplicate detection, but never reverse back into the actual
+            name. See "How search works without reading your data" below.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Why not encrypt everything?</h2>
+      <p>
+        Because a server that can't read your CV can't evaluate it against a job posting —
+        that's not a limitation we're working around, it's math. Full end-to-end encryption
+        and server-side AI evaluation are in direct tension: one requires the server to see
+        plaintext, the other requires it never to. We picked a specific, narrow answer to
+        that tension instead of pretending it doesn't exist.
+      </p>
+    </section>
+
+    <section>
+      <h2>How the key hierarchy works</h2>
+      <ol class="hierarchy">
+        <li>
+          <strong>Your password</strong> never leaves your browser. It's run through
+          Argon2id — a slow, memory-hard function specifically designed to resist
+          brute-forcing — to derive your <strong>Master Key</strong>.
+        </li>
+        <li>
+          Your actual content is encrypted with a separate <strong>Data Encryption Key</strong>
+          (DEK), which is itself encrypted ("wrapped") by your Master Key. This indirection
+          means changing your password only re-wraps one small key, not every record you've
+          ever saved.
+        </li>
+        <li>
+          At signup, you get a <strong>recovery key</strong> — 24 ordinary words, shown once.
+          It's a second way to unwrap your DEK if you forget your password. We do not store
+          it, and we cannot resend it.
+        </li>
+      </ol>
+      <div class="warning">
+        <strong>If you lose both your password and your recovery key, your data is gone.</strong>
+        Not "hard to recover" — genuinely unrecoverable, by us or anyone. That's the actual
+        cost of a server that can't read your data. Write the recovery key down somewhere
+        that isn't this browser.
+      </div>
+    </section>
+
+    <section>
+      <h2>How an evaluation actually works</h2>
+      <p>
+        You click <em>Evaluate</em>. Your browser decrypts your CV and the job description
+        and sends them, over TLS, for that one request only. The AI provider processes it in
+        memory — never written to disk, never logged, the request body scrubbed from any
+        error trace. The result comes back, your browser encrypts it, and that's what gets
+        saved. Nothing server-side ever holds your plaintext CV at rest, and each evaluation
+        is a deliberate action you take, not something that happens to your data in the
+        background.
+      </p>
+    </section>
+
+    <section>
+      <h2>How search works without reading your data</h2>
+      <p>
+        Filtering your pipeline by company name needs to work, but the server still shouldn't
+        know which companies you're targeting. The fix is a <em>blind index</em>: your
+        browser derives a separate key from your DEK and uses it to compute a one-way hash of
+        each company name. The server stores and matches on that hash — identical company
+        names produce identical hashes, so filtering and duplicate detection work — but it
+        can't run the hash backward to learn what the name was, and a different user's hash
+        for the same company will never match yours.
+      </p>
+    </section>
+
+    <section>
+      <h2>What we log, and why</h2>
+      <p>
+        We track product behavior — feature usage, conversion, error rates, how long an
+        evaluation takes — because that's how we know what to build next. We do not, and
+        structurally cannot, track what's inside your CV or your reports. See our
+        <a href="/legal/privacy">privacy policy</a> for the full list of what's collected.
+      </p>
+    </section>
+
+    <section class="cta">
+      <a href="/#waitlist">Get early access &rarr;</a>
+    </section>
+  </main>
+</Base>
+
+<style>
+  .page { max-width: 46rem; margin: 0 auto; padding: var(--p-space-16) var(--p-space-6); }
+  .page-header { margin-bottom: var(--p-space-12); }
+  .page-header h1 { font-family: var(--p-font-display); font-size: var(--p-text-5xl); color: var(--p-porphyra-900); margin: 0 0 var(--p-space-3); }
+  .page-header p { font-size: var(--p-text-lg); color: var(--color-muted); }
+  section { margin-bottom: var(--p-space-12); }
+  h2 { font-family: var(--p-font-display); font-size: var(--p-text-2xl); color: var(--p-porphyra-900); margin-bottom: var(--p-space-4); }
+  h3 { font-size: var(--p-text-lg); margin: 0 0 var(--p-space-1); }
+  p { color: var(--color-muted); }
+
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: var(--p-space-8); }
+  .split-col { border: 1px solid var(--color-border); border-radius: var(--card-radius); padding: var(--p-space-6); }
+  .split-col--encrypted { background: var(--color-success-soft); border-color: var(--p-verdigris-500); }
+  .split-note { font-size: var(--p-text-sm); margin: 0 0 var(--p-space-4); }
+  .split-col ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--p-space-2); }
+  .split-col li { padding-left: var(--p-space-5); position: relative; color: var(--color-foreground); }
+  .split-col li::before { content: "🔒"; position: absolute; left: 0; font-size: 0.75em; }
+  .split-col table { width: 100%; border-collapse: collapse; font-size: var(--p-text-sm); }
+  .split-col td { padding: var(--p-space-2) 0; border-bottom: 1px solid var(--color-border); vertical-align: top; }
+  .split-col td:first-child { font-weight: 600; color: var(--color-foreground); white-space: nowrap; padding-right: var(--p-space-3); }
+  .split-col td:last-child { color: var(--color-muted); }
+
+  .hierarchy { display: flex; flex-direction: column; gap: var(--p-space-4); padding-left: var(--p-space-6); color: var(--color-muted); }
+  .hierarchy strong { color: var(--color-foreground); }
+
+  .warning {
+    background: var(--color-warning-soft);
+    border: 1px solid var(--color-warning);
+    border-radius: var(--card-radius);
+    padding: var(--p-space-4) var(--p-space-5);
+    color: var(--color-warning-text);
+    margin-top: var(--p-space-4);
+  }
+
+  .cta { text-align: center; }
+  .cta a {
+    display: inline-block;
+    background: var(--button-primary-bg);
+    color: var(--button-primary-fg);
+    padding: var(--button-padding-y) var(--button-padding-x);
+    border-radius: var(--button-radius);
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  @media (max-width: 640px) {
+    .split { grid-template-columns: 1fr; }
+  }
+</style>

@@ -1,0 +1,38 @@
+---
+import Base from "./Base.astro";
+
+interface Props {
+  title: string;
+  description: string;
+  lastUpdated: string;
+  draftNote?: string;
+}
+
+const {
+  title,
+  description,
+  lastUpdated,
+  draftNote = "Draft pending legal review — not yet in effect for a live product. This is not legal advice.",
+} = Astro.props;
+---
+
+<Base title={title} description={description} noIndex={true}>
+  <main class="legal">
+    <h1>{title}</h1>
+    <p class="meta">Last updated: {lastUpdated} · {draftNote}</p>
+    <slot />
+  </main>
+</Base>
+
+<style is:global>
+  .legal { max-width: 42rem; margin: 0 auto; padding: var(--p-space-16) var(--p-space-6); }
+  .legal h1 { font-family: var(--p-font-display); font-size: var(--p-text-4xl); color: var(--p-porphyra-900); margin: 0 0 var(--p-space-2); }
+  .legal .meta { font-size: var(--p-text-sm); color: var(--color-faint); margin-bottom: var(--p-space-8); }
+  .legal h2 { font-size: var(--p-text-xl); color: var(--p-porphyra-900); margin: var(--p-space-8) 0 var(--p-space-3); }
+  .legal h3 { font-size: var(--p-text-base); margin: var(--p-space-4) 0 var(--p-space-1); }
+  .legal p, .legal li { color: var(--color-muted); }
+  .legal table { width: 100%; border-collapse: collapse; margin: var(--p-space-4) 0; }
+  .legal th, .legal td { text-align: left; padding: var(--p-space-2) var(--p-space-3); border-bottom: 1px solid var(--color-border); font-size: var(--p-text-sm); }
+  .legal th { color: var(--color-foreground); }
+  .legal td { color: var(--color-muted); }
+</style>
