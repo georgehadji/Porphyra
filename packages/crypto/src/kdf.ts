@@ -1,15 +1,9 @@
 // Argon2id key derivation — the only place a user's password is ever
 // touched. Runs entirely client-side; the raw password never leaves the
 // browser (see the plan's Encryption design § Key hierarchy).
-//
-// Phase 2 TODO (auth flow, not a crypto-primitive concern): the login screen
-// needs `saltAuth` *before* the user is authenticated, which means a
-// pre-login endpoint that returns a user's stored salt for a given email —
-// standard practice (same shape as SRP/OPAQUE-style flows), but it's wiring,
-// not covered by this package.
 
 import { argon2id } from "hash-wasm";
-import { randomBytes } from "./encoding";
+import { bytesToBase64, randomBytes, toArrayBuffer } from "./encoding";
 
 export interface KdfParams {
   algo: "argon2id";
@@ -40,6 +34,59 @@ export const AUTH_VERIFIER_PARAMS: KdfParams = MASTER_KEY_PARAMS;
 
 export function generateSalt(): Uint8Array {
   return randomBytes(16);
+}
+
+/**
+ * The Master Key's salt (`encSalt`, stored in `user_keys`) is random and
+ * only needed AFTER login succeeds — the client fetches it from an
+ * authenticated endpoint once it has a session, then derives the Master Key
+ * to unwrap the DEK. It never gates login itself.
+ *
+ * The auth verifier's salt has a different constraint: the client needs it
+ * BEFORE authenticating, to derive the value it sends as "the password".
+ * Rather than adding a pre-login lookup endpoint (an extra round trip and
+ * an email-enumeration surface — a differing response time or error shape
+ * for "unknown email" vs "wrong password" leaks account existence), this
+ * salt is derived deterministically from the email itself via HKDF. It
+ * doesn't need secrecy or randomness: its only job is domain-separating the
+ * auth verifier from the Master Key derivation (different salt -> unrelated
+ * output, even though both start from the same password), not adding
+ * brute-force cost — Argon2id's own cost parameters do that job.
+ */
+export async function deriveAuthVerifierSalt(email: string): Promise<Uint8Array> {
+  const normalized = email.trim().toLowerCase();
+  const ikm = await crypto.subtle.importKey(
+    "raw",
+    toArrayBuffer(new TextEncoder().encode(normalized)),
+    "HKDF",
+    false,
+    ["deriveBits"],
+  );
+  const bits = await crypto.subtle.deriveBits(
+    {
+      name: "HKDF",
+      hash: "SHA-256",
+      salt: toArrayBuffer(new Uint8Array(0)),
+      info: toArrayBuffer(new TextEncoder().encode("porphyra-auth-verifier-salt-v1")),
+    },
+    ikm,
+    128, // 16 bytes — same size as generateSalt()'s random salts
+  );
+  return new Uint8Array(bits);
+}
+
+/**
+ * The value sent to Better Auth as "the password" at signup and login.
+ * Base64-encoded so it's a plain string Better Auth can hash with its own
+ * algorithm — see apps/app/src/lib/auth.ts's comment on why this is safe:
+ * this is NOT the user's real password, and this server-side value alone
+ * can never unlock the vault (that needs the Master Key, derived with a
+ * different salt from the real password — see MASTER_KEY_PARAMS above).
+ */
+export async function deriveAuthVerifier(password: string, email: string): Promise<string> {
+  const salt = await deriveAuthVerifierSalt(email);
+  const bytes = await deriveKeyMaterial(password, salt, AUTH_VERIFIER_PARAMS);
+  return bytesToBase64(bytes);
 }
 
 /**

@@ -68,6 +68,24 @@ Both can be added without touching anything else.
 use `porphyra.example` as a placeholder — find/replace once chosen, then Phase 1 can go live
 per `infra/README.md`.
 
+## Auth + vault (apps/app)
+
+Better Auth: email/password, Google/GitHub OAuth (opt-in, only registered when both env vars
+for a provider are set), TOTP 2FA with backup codes, session cookies via `nextCookies`.
+
+The password Better Auth ever sees is **not the user's real password** — the client derives
+a verifier via Argon2id, salted deterministically from the email (`deriveAuthVerifierSalt` in
+`packages/crypto`) so login needs no pre-auth lookup round trip. The real password only ever
+touches a *second*, independent Argon2id derivation — the Master Key, salted randomly per
+account — which unwraps the vault's Data Encryption Key entirely client-side. Vault bootstrap
+happens on first login (not signup), sidestepping any ambiguity about whether Better Auth
+issues a session before email verification. The 24-word recovery phrase is shown exactly
+once, with a mandatory written acknowledgement, and never touches the server.
+
+```bash
+pnpm --filter @porphyra/crypto test   # round-trip, wrong-password-rejection, auth-verifier tests
+```
+
 ## Getting started
 
 Requires Node ≥20, pnpm 9.15+, Docker.
@@ -97,7 +115,7 @@ Each phase ends deployable.
 |---|---|---|
 | 0 | Foundation — monorepo, tokens, UI kit, core logic, crypto, infra | ✅ Done |
 | 1 | Marketing site — content, legal pages, segment framework, waitlist | ✅ Built — blocked on domain choice for live deploy |
-| 2 | Auth + crypto — Better Auth, 2FA, OAuth, vault, onboarding | Planned |
+| 2 | Auth + crypto — Better Auth, 2FA, OAuth, vault, onboarding | ✅ Built |
 | 3 | Core pipeline — evaluate → track → tailor CV → PDF | Planned |
 | 4 | Billing — Stripe free + Pro | Planned |
 | 5 | Analytics — event pipeline, admin dashboard, ops telemetry | Planned |

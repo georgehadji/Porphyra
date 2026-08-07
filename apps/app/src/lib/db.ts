@@ -1,29 +1,24 @@
 import { type Db, createDb } from "@porphyra/db";
 
-// Lazily initialized and cached across hot reloads in dev / warm
-// container invocations in prod. Deliberately NOT a module-level
-// `export const db = createDb(...)` — that runs at import time, and Next.js
-// imports every route module during `next build` to collect its exported
-// HTTP methods, which would open a real Postgres connection (and fail the
-// build outright if DATABASE_URL isn't set, which it correctly isn't in a
-// bare CI checkout) just from being imported, before any request ever
-// happens. getDb() defers both the env read and the connection to the
-// first actual call.
+// Cached across hot reloads in dev / warm container invocations in prod.
+//
+// Falls back to the same local-dev default as packages/db/drizzle.config.ts
+// when DATABASE_URL is unset, rather than throwing. That's deliberate:
+// `postgres()` (the driver createDb wraps) never opens a TCP connection at
+// construction — only on the first query — so this stays side-effect-free
+// even when Next.js imports every route/auth module during `next build` to
+// collect exported HTTP methods (which is exactly what broke here once
+// already — see git history on this file). A genuinely missing
+// DATABASE_URL in production still fails loudly, just at the first real
+// query instead of at import time, with an actual connection-refused error
+// pointing at the fallback host — clear enough to diagnose.
 const globalForDb = globalThis as unknown as { porphyraDb?: Db };
 
-export function getDb(): Db {
-  if (globalForDb.porphyraDb) return globalForDb.porphyraDb;
+const DATABASE_URL =
+  process.env.DATABASE_URL ?? "postgres://porphyra:porphyra@localhost:5432/porphyra";
 
-  const url = process.env.DATABASE_URL;
-  if (!url) {
-    throw new Error(
-      "DATABASE_URL is not set — copy .env.example to .env and fill in a real connection string.",
-    );
-  }
+export const db: Db = globalForDb.porphyraDb ?? createDb(DATABASE_URL);
 
-  const instance = createDb(url);
-  if (process.env.NODE_ENV !== "production") {
-    globalForDb.porphyraDb = instance;
-  }
-  return instance;
+if (process.env.NODE_ENV !== "production") {
+  globalForDb.porphyraDb = db;
 }

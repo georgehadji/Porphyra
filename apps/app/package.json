@@ -17,6 +17,7 @@
     "@porphyra/db": "workspace:*",
     "@porphyra/tokens": "workspace:*",
     "@porphyra/ui": "workspace:*",
+    "better-auth": "^1.6.26",
     "next": "^16.2.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

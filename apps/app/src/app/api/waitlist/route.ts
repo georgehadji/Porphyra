@@ -1,7 +1,7 @@
 import { waitlistEntries } from "@porphyra/db";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getDb } from "@/lib/db";
+import { db } from "@/lib/db";
 import { checkRateLimit, clientIpFrom } from "@/lib/rateLimit";
 
 // POSTed to cross-origin from apps/web's static WaitlistForm — see that
@@ -22,8 +22,13 @@ const waitlistSchema = z.object({
 
 function corsHeaders(origin: string | null): HeadersInit {
   const allowed = process.env.MARKETING_URL ?? "http://localhost:4321";
+  // Echo the origin back ONLY when it's the configured marketing site —
+  // omitting the header for anything else (rather than always sending
+  // `allowed`, which would make the check a no-op) is what actually causes
+  // the browser to block a cross-origin read from an unexpected origin.
+  if (origin !== allowed) return { "Access-Control-Allow-Methods": "POST, OPTIONS" };
   return {
-    "Access-Control-Allow-Origin": origin === allowed ? allowed : allowed,
+    "Access-Control-Allow-Origin": allowed,
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
   };
@@ -67,7 +72,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    await getDb()
+    await db
       .insert(waitlistEntries)
       .values({
         email: parsed.data.email,

@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { aesDecryptText, aesEncryptText, importAesKey, unwrapRawKey, wrapRawKey } from "./aes";
 import { computeBlindIndex, normalizeForIndex } from "./blindIndex";
-import { deriveKeyMaterial, generateSalt, MASTER_KEY_PARAMS } from "./kdf";
+import { base64ToBytes } from "./encoding";
+import {
+  AUTH_VERIFIER_PARAMS,
+  deriveAuthVerifier,
+  deriveAuthVerifierSalt,
+  deriveKeyMaterial,
+  generateSalt,
+  MASTER_KEY_PARAMS,
+} from "./kdf";
 import { deriveIndexKey, generateDek, generateRecoveryKey, mnemonicToRecoveryKey } from "./keys";
 
 // Argon2id at full memory cost (64 MiB) is slow enough in a test loop that
@@ -89,6 +97,69 @@ describe("blind index", () => {
   it("normalizeForIndex collapses whitespace and case", () => {
     expect(normalizeForIndex("  Google  Inc  ")).toBe("google inc");
   });
+});
+
+describe("auth verifier salt (deterministic, from email)", () => {
+  it(
+    "is deterministic for the same email",
+    async () => {
+      const a = await deriveAuthVerifierSalt("user@example.com");
+      const b = await deriveAuthVerifierSalt("user@example.com");
+      expect(a).toEqual(b);
+    },
+    KDF_TIMEOUT_MS,
+  );
+
+  it("normalizes case and whitespace, same as blind indexing", async () => {
+    const a = await deriveAuthVerifierSalt(" User@Example.com ");
+    const b = await deriveAuthVerifierSalt("user@example.com");
+    expect(a).toEqual(b);
+  });
+
+  it("differs across different emails", async () => {
+    const a = await deriveAuthVerifierSalt("alice@example.com");
+    const b = await deriveAuthVerifierSalt("bob@example.com");
+    expect(a).not.toEqual(b);
+  });
+});
+
+describe("auth verifier (what the server sees as \"the password\")", () => {
+  it(
+    "differs from the Master Key derived from the same password",
+    async () => {
+      const password = "correct horse battery staple";
+      const email = "user@example.com";
+
+      const verifier = await deriveAuthVerifier(password, email);
+
+      const encSalt = generateSalt(); // a real per-signup random salt, distinct from the deterministic auth salt
+      const mkRaw = await deriveKeyMaterial(password, encSalt, MASTER_KEY_PARAMS);
+
+      // The verifier is base64 text; compare on the decoded bytes so this
+      // doesn't just trivially pass because one's base64 and one isn't.
+      expect(base64ToBytes(verifier)).not.toEqual(mkRaw);
+    },
+    KDF_TIMEOUT_MS,
+  );
+
+  it(
+    "is deterministic for the same password + email (so login recomputes it identically)",
+    async () => {
+      const verifierA = await deriveAuthVerifier("hunter2 hunter2", "user@example.com");
+      const verifierB = await deriveAuthVerifier("hunter2 hunter2", "user@example.com");
+      expect(verifierA).toBe(verifierB);
+    },
+    KDF_TIMEOUT_MS,
+  );
+
+  it(
+    "uses AUTH_VERIFIER_PARAMS' full cost, not a cheaper shortcut",
+    async () => {
+      expect(AUTH_VERIFIER_PARAMS.memoryKb).toBe(MASTER_KEY_PARAMS.memoryKb);
+      expect(AUTH_VERIFIER_PARAMS.iterations).toBe(MASTER_KEY_PARAMS.iterations);
+    },
+    KDF_TIMEOUT_MS,
+  );
 });
 
 describe("no plaintext leakage in the encrypted payload shape", () => {
