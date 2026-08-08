@@ -3,11 +3,15 @@
 Score every job posting before you spend an evening tailoring a CV for it. Encrypted by
 default. Built for job seekers everywhere, most of them remote.
 
-**Status: Phases 0–5 complete.** Foundation, marketing site, auth + the E2EE vault, the core
-evaluate → track pipeline, Stripe billing, and the analytics event pipeline are built. The
-auth/vault flow has been driven end to end through a real browser against real Postgres, not
-just typechecked — see [Phases](#phases) for exactly what's live-verified versus what rests
-on typecheck/build alone.
+**Status: Phases 0–6 complete — not yet launched.** Every planned phase is built: foundation,
+marketing site, auth + the E2EE vault, the core evaluate → track pipeline, Stripe billing, the
+analytics event pipeline, and hardening (CSP, Redis-backed rate limiting, structured logging,
+backup/restore scripts, a threat model, a launch runbook). The auth/vault flow has been driven
+end to end through a real browser against real Postgres, not just typechecked — see
+[Phases](#phases) for exactly what's live-verified versus what rests on typecheck/build alone,
+and [`docs/LAUNCH_RUNBOOK.md`](docs/LAUNCH_RUNBOOK.md) before treating this as launch-ready.
+It isn't yet — the restore drill hasn't been run for real, and neither has an actual Claude or
+Stripe API call.
 
 ## Why "Porphyra"
 
@@ -172,6 +176,45 @@ built, alongside the backup/restore drill.
 `.toSQL()` output, not an actual query result. Docker's engine remains stuck in a broken
 handshake state in this environment.
 
+## Hardening (Phase 6)
+
+- **Per-request nonce-based CSP** (`apps/app/src/proxy.ts` — Next.js 16 renamed
+  `middleware.ts` to `proxy.ts`; this codebase uses the current convention, not the
+  deprecated one). Closes a gap flagged in `next.config.mjs`'s own comment since Phase 2:
+  Caddy handles the marketing site's static CSP, but the app needs a fresh nonce per request,
+  which only app code can generate.
+- **Redis-backed rate limiting** (`apps/app/src/lib/rateLimit.ts`), replacing Phase 1's
+  in-memory version now that the trigger conditions its own comment named — more than one
+  rate-limited endpoint, a real login surface — both exist. Fails open on Redis errors
+  (logged), since rate limiting here is defense-in-depth, not the primary security boundary.
+  Applied to `/api/waitlist` (already existed) and newly to `/api/evaluate` (a real gap:
+  the endpoint had a monthly quota but no burst limit).
+- **Structured logging** (`apps/app/src/lib/logger.ts`, Pino) — every `console.error` in the
+  app that represents an actual operational condition now emits structured JSON, which is
+  what makes `infra/docker-compose.observability.yml`'s Promtail scrape config useful. A
+  dev-only convenience log (the "no RESEND_API_KEY" fallback, which prints a copy-pasteable
+  verification link) deliberately stays plain `console.log`.
+- **Backup + restore** (`infra/scripts/backup.sh`, `restore.sh`, `restore-drill.md`) —
+  pg_dump → age-encrypt → ship offsite, and the matching restore path with a typed
+  confirmation guard before it overwrites a target database. **The drill itself has not been
+  run** — `age`/`restic` aren't installed in this environment and no production backup exists
+  yet. This is a real, logged gap (see the drill log), not a formality.
+- **Observability scaffolding** (`infra/docker-compose.observability.yml`) — Prometheus +
+  Loki + Promtail + Grafana as an optional overlay, not started by default. Gives you log
+  aggregation and a metrics-collection layer; does NOT give you dashboards, alerting rules,
+  or app-exported Prometheus metrics — building those against real traffic patterns is
+  separate, later work.
+- **CI security gate hardened** — `pnpm audit --prod --audit-level=high` is now a hard gate
+  (Phase 0 shipped it as `continue-on-error: true`, "advisory until Phase 6 sets the enforced
+  baseline" — this is that baseline), plus a new OSV-Scanner step alongside the existing
+  gitleaks/Semgrep checks.
+- **[`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md)** — STRIDE-scoped to this actual
+  architecture, not a generic template. Names one real unaddressed gap explicitly:
+  `audit_log` exists in the schema but no write path populates it yet.
+- **[`docs/LAUNCH_RUNBOOK.md`](docs/LAUNCH_RUNBOOK.md)** — the pre-launch checklist. Its last
+  item is the one nothing in this codebase can verify by itself: a real person running the
+  full signup → evaluate → upgrade chain against the actual production domain.
+
 ## Getting started
 
 Requires Node ≥20, pnpm 9.15+, Docker.
@@ -205,7 +248,7 @@ Each phase ends deployable.
 | 3 | Core pipeline — evaluate → track (CV tailoring/PDF deferred, see below) | ✅ Built — AI call unverified, no API key in this environment |
 | 4 | Billing — Stripe free + Pro | ✅ Built — checkout/webhook unverified, no Stripe test key in this environment |
 | 5 | Analytics — event pipeline, admin dashboard (ops telemetry deferred to Phase 6, see `infra/README.md`) | ✅ Built — DB queries offline-verified, not against live Postgres |
-| 6 | Hardening — threat model, restore drill, launch runbook | Planned |
+| 6 | Hardening — CSP, Redis rate limiting, structured logging, backups, threat model, launch runbook | ✅ Built — restore drill not yet run for real |
 
 ## Infrastructure
 

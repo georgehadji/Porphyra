@@ -1,0 +1,12 @@
+# Minimal starting config — scrapes itself only. Add a job here once
+# apps/app exports a /metrics endpoint (not built yet; a reasonable next
+# step is prom-client behind an internal-only route, never exposed through
+# Caddy). No alerting rules configured — Alertmanager is a separate,
+# deliberate addition once you know what's actually worth paging on.
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]

@@ -2,6 +2,7 @@ import { waitlistEntries } from "@porphyra/db";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
+import { logger } from "@/lib/logger";
 import { checkRateLimit, clientIpFrom } from "@/lib/rateLimit";
 
 // POSTed to cross-origin from apps/web's static WaitlistForm — see that
@@ -42,7 +43,7 @@ export async function POST(request: Request) {
   const headers = corsHeaders(request.headers.get("origin"));
   const ip = clientIpFrom(request.headers);
 
-  const { allowed } = checkRateLimit(`waitlist:${ip}`, RATE_LIMIT, RATE_WINDOW_MS);
+  const { allowed } = await checkRateLimit(`waitlist:${ip}`, RATE_LIMIT, RATE_WINDOW_MS);
   if (!allowed) {
     return NextResponse.json(
       { message: "Too many attempts — try again in a few minutes." },
@@ -81,7 +82,7 @@ export async function POST(request: Request) {
       })
       .onConflictDoNothing(); // already on the list — treat as success, not an error
   } catch (error) {
-    console.error("waitlist insert failed", error);
+    logger.error({ err: error }, "waitlist insert failed");
     return NextResponse.json(
       { message: "Something went wrong — try again shortly." },
       { status: 500, headers },

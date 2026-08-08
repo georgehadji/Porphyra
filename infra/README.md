@@ -111,5 +111,10 @@ this is a hard gate in Phase 6, not optional polish.
 
 - Domain not yet chosen — `Caddyfile` and this runbook use `porphyra.example` as a
   placeholder throughout; find/replace once decided.
-- `infra/scripts/backup.sh`, `restore-drill.md`, and the CI deploy pipeline land in
-  Phase 6 (Hardening), alongside Prometheus/Grafana/Loki for ops telemetry.
+- **The restore drill has not actually been run** (`infra/scripts/restore-drill.md`'s log is
+  empty). The scripts exist; the drill itself needs `age`/`restic` installed and either a
+  real production backup or the dry-run path documented in that file. Do not treat this
+  system as launch-ready until at least one PASS is logged there.
+- Prometheus/Grafana/Loki (ops telemetry) and a CI deploy pipeline are not built. See
+  `docker-compose.prod.yml`'s comment on why they're scaffolded as a follow-up rather than
+  fully wired here — dashboards and alerting rules are real, separate work.

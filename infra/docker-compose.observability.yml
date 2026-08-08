@@ -1,0 +1,64 @@
+# Ops telemetry — Prometheus + Grafana + Loki + Promtail. Optional: NOT
+# required to launch, and not started by default. Layer it on top of the
+# main stack when you actually want dashboards/alerting, not before:
+#
+#   docker compose -f docker-compose.prod.yml -f docker-compose.observability.yml up -d
+#
+# What this gives you: log aggregation (Loki, fed by Promtail reading
+# container stdout) and metrics scraping (Prometheus) with a Grafana UI on
+# top. What it does NOT give you yet: actual dashboards, alerting rules, or
+# app-level metrics instrumentation (Pino structured logs already flow to
+# stdout, which Promtail picks up — but nothing exports Prometheus metrics
+# from apps/app yet). Building real dashboards and alert rules against your
+# actual traffic patterns is genuinely separate work from standing up the
+# collection layer — don't treat "the containers are running" as "we have
+# observability."
+name: porphyra-observability
+
+services:
+  prometheus:
+    image: prom/prometheus:v3.1.0
+    restart: unless-stopped
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - porphyra_prometheus_data:/prometheus
+    networks: [porphyra]
+
+  loki:
+    image: grafana/loki:3.3.0
+    restart: unless-stopped
+    volumes:
+      - porphyra_loki_data:/loki
+    networks: [porphyra]
+
+  promtail:
+    image: grafana/promtail:3.3.0
+    restart: unless-stopped
+    volumes:
+      - ./observability/promtail.yml:/etc/promtail/config.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command: -config.file=/etc/promtail/config.yml
+    networks: [porphyra]
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?set in .env}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - porphyra_grafana_data:/var/lib/grafana
+    ports:
+      - "127.0.0.1:3002:3000" # reverse-proxy behind Caddy + auth before exposing publicly
+    networks: [porphyra]
+
+networks:
+  porphyra:
+    external: true
+    name: porphyra_porphyra # matches docker-compose.prod.yml's implicit network name
+
+volumes:
+  porphyra_prometheus_data:
+  porphyra_loki_data:
+  porphyra_grafana_data:

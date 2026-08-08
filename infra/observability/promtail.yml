@@ -1,0 +1,22 @@
+# Ships every container's stdout/stderr to Loki, labeled by container name.
+# apps/app should log structured JSON (Pino) to stdout rather than a file —
+# that's what makes this useful; Promtail here does no parsing beyond
+# attaching the container-name label, so structure comes from the app.
+server:
+  http_listen_port: 9080
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: docker
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 15s
+    relabel_configs:
+      - source_labels: ["__meta_docker_container_name"]
+        regex: "/(.*)"
+        target_label: container

@@ -7,7 +7,17 @@ import { z } from "zod";
 import { track } from "@/lib/analytics";
 import { db } from "@/lib/db";
 import { checkEvaluationQuota, recordEvaluationUsage } from "@/lib/quota";
+import { checkRateLimit } from "@/lib/rateLimit";
 import { getSession } from "@/lib/session";
+
+// Per-user burst limit, separate from and tighter than the monthly quota —
+// the quota caps total spend, this caps how FAST that spend can happen.
+// Without it, a script hammering this endpoint could fire many concurrent
+// evaluations before checkEvaluationQuota's read-then-write has a chance
+// to catch up (it isn't transactionally atomic against concurrent
+// requests — a real gap, noted here rather than silently accepted).
+const EVALUATE_RATE_LIMIT = 5;
+const EVALUATE_RATE_WINDOW_MS = 60_000;
 
 // The consented AI evaluation path — see the plan's Encryption design
 // section. The client decrypts the CV and JD BEFORE this request and sends
@@ -27,6 +37,18 @@ const evaluateSchema = z.object({
 export async function POST(request: Request) {
   const session = await getSession();
   if (!session) return NextResponse.json({ message: "Sign in first." }, { status: 401 });
+
+  const { allowed: withinRateLimit } = await checkRateLimit(
+    `evaluate:${session.user.id}`,
+    EVALUATE_RATE_LIMIT,
+    EVALUATE_RATE_WINDOW_MS,
+  );
+  if (!withinRateLimit) {
+    return NextResponse.json(
+      { message: "Too many evaluations in a short time — wait a minute and try again." },
+      { status: 429 },
+    );
+  }
 
   const parsed = evaluateSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {

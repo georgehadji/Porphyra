@@ -1,5 +1,6 @@
 import { events } from "@porphyra/db";
 import { db } from "@/lib/db";
+import { logger } from "@/lib/logger";
 
 // Behavioural analytics only — see the plan's E2EE-vs-analytics resolution
 // and events' own schema comment. `props` must NEVER contain vault
@@ -31,6 +32,6 @@ export async function track(
     await db.insert(events).values({ userId, name, props });
   } catch (error) {
     // Analytics must never break the request it's attached to.
-    console.error("analytics track() failed", name, error);
+    logger.error({ event: name, err: error }, "analytics track() failed");
   }
 }

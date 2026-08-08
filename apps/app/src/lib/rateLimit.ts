@@ -1,17 +1,19 @@
-// In-memory, single-process rate limiter. Fine for Phase 1 (one app
-// instance, low-stakes endpoint — a waitlist signup, not login or payment).
-// NOT fine once the app scales past one instance or once Phase 2 adds
-// account login: that needs a shared store (Redis, already provisioned in
-// infra/docker-compose.*.yml) so limits hold across instances and survive a
-// restart. Swap this for a Redis-backed version before then — grep this
-// file's name to find every caller.
+// Redis-backed rate limiter — replaces the Phase 1 in-memory version now
+// that the app has more than one rate-limited endpoint and a real login
+// surface (the trigger conditions that version's own comment named for
+// reconsidering it). Fixed-window INCR+EXPIRE: the first request in a
+// window creates the key with a TTL, every subsequent request in that
+// window just increments it — two round trips, but rate limiting doesn't
+// need to be faster than that, and it avoids a Lua script for a fixed-
+// window counter (a sliding-window log would need one; this doesn't).
+//
+// Fails OPEN on Redis errors — logged, not silently swallowed, but a
+// flaky rate-limit store must never take the whole app down with it. This
+// is infrastructure defense-in-depth, not the primary security boundary
+// (per-account quotas and Better Auth's own auth-route rate limiting are).
 
-interface Bucket {
-  count: number;
-  resetAt: number;
-}
-
-const buckets = new Map<string, Bucket>();
+import { logger } from "./logger";
+import { getRedis } from "./redis";
 
 export interface RateLimitResult {
   allowed: boolean;
@@ -19,25 +21,27 @@ export interface RateLimitResult {
 }
 
 /**
- * Fixed-window limiter: `key` gets `limit` requests per `windowMs`.
+ * `key` gets `limit` requests per `windowMs`.
  *
- * @param key - Usually `${routeName}:${clientIp}`.
+ * @param key - Usually `${routeName}:${clientIp}` or `${routeName}:${userId}`.
  */
-export function checkRateLimit(key: string, limit: number, windowMs: number): RateLimitResult {
-  const now = Date.now();
-  const existing = buckets.get(key);
-
-  if (!existing || existing.resetAt <= now) {
-    buckets.set(key, { count: 1, resetAt: now + windowMs });
-    return { allowed: true, remaining: limit - 1 };
+export async function checkRateLimit(
+  key: string,
+  limit: number,
+  windowMs: number,
+): Promise<RateLimitResult> {
+  const redisKey = `ratelimit:${key}`;
+  try {
+    const redis = getRedis();
+    const count = await redis.incr(redisKey);
+    if (count === 1) {
+      await redis.pexpire(redisKey, windowMs);
+    }
+    return { allowed: count <= limit, remaining: Math.max(0, limit - count) };
+  } catch (error) {
+    logger.error({ key, err: error }, "Rate limit check failed — failing open");
+    return { allowed: true, remaining: limit };
   }
-
-  if (existing.count >= limit) {
-    return { allowed: false, remaining: 0 };
-  }
-
-  existing.count += 1;
-  return { allowed: true, remaining: limit - existing.count };
 }
 
 /** Best-effort client IP from standard proxy headers (Caddy sets
