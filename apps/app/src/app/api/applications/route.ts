@@ -2,6 +2,7 @@ import { applications } from "@porphyra/db";
 import { desc, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { track } from "@/lib/analytics";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/session";
 
@@ -39,6 +40,8 @@ export async function POST(request: Request) {
       score: parsed.data.score?.toFixed(2),
     })
     .returning();
+
+  await track(session.user.id, "application_created");
 
   return NextResponse.json(application, { status: 201 });
 }

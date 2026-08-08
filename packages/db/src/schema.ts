@@ -103,6 +103,21 @@ export const twoFactor = pgTable("two_factor", {
 });
 
 /**
+ * Admin allowlist for /admin/* routes. A separate table, not an
+ * `isAdmin` column on `user` — that table intentionally mirrors Better
+ * Auth's own schema field-for-field (see its doc comment above); adding an
+ * app-specific field there breaks that invariant for one boolean's worth of
+ * convenience. Presence of a row IS admin status — no `role` enum, because
+ * there is exactly one privilege tier right now.
+ */
+export const admins = pgTable("admins", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/**
  * Pre-launch waitlist (Phase 1, apps/web's marketing site). Deliberately NOT
  * linked to `user` — a waitlist signup precedes account
  * creation and most rows will never become a user. Email is stored in clear

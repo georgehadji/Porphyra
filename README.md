@@ -3,10 +3,11 @@
 Score every job posting before you spend an evening tailoring a CV for it. Encrypted by
 default. Built for job seekers everywhere, most of them remote.
 
-**Status: Phases 0–4 complete.** Foundation, marketing site, auth + the E2EE vault, the core
-evaluate → track pipeline, and Stripe billing are built. The auth/vault flow has been driven
-end to end through a real browser against real Postgres, not just typechecked — see
-[Phases](#phases) for exactly what's live-verified versus what rests on typecheck/build alone.
+**Status: Phases 0–5 complete.** Foundation, marketing site, auth + the E2EE vault, the core
+evaluate → track pipeline, Stripe billing, and the analytics event pipeline are built. The
+auth/vault flow has been driven end to end through a real browser against real Postgres, not
+just typechecked — see [Phases](#phases) for exactly what's live-verified versus what rests
+on typecheck/build alone.
 
 ## Why "Porphyra"
 
@@ -142,6 +143,35 @@ guarantee the field populates for every account's default API version.
 **Not live-verified:** an actual Checkout session, webhook delivery, or subscription upsert
 against real Stripe — no Stripe test key in this environment.
 
+## Analytics (apps/app)
+
+Behavioural only — `track()` (`apps/app/src/lib/analytics.ts`) is called from six
+already-authenticated server routes (vault bootstrap, evaluation completed/quota-exceeded,
+application created/state-changed, checkout started, subscription upgraded), never from a
+generic client-facing endpoint. `props` can only ever hold structural facts (counts, IDs,
+state names) — it structurally cannot contain vault content, the same E2EE-vs-analytics split
+from the original plan. `/admin/analytics` (gated by a separate `admins` allowlist table, not
+a field bolted onto Better Auth's own `user` table) shows an activation funnel, per-event
+feature adoption, and AI cost by user — a non-admin gets a 404 for both the page and its API
+route, not a 403, so the route's existence isn't confirmed to someone who shouldn't see it.
+
+**Real bug caught offline, before it ever touched a database:** the funnel query originally
+used a raw `sql`... = ANY(${array})`` template. Drizzle compiles an array parameter there to
+`ANY(($1, $2, $3, $4))` — which Postgres parses as a row constructor, not an array, and
+rejects. Caught by literally printing the generated SQL via Drizzle's own `.toSQL()` (no live
+connection needed) before trusting it, then fixed by switching to Drizzle's typed `inArray()`
+instead of hand-rolled SQL. Two of the three analytics queries used a raw `sql`... desc``
+for ordering too; replaced with `desc(count())` / `desc(sum(...))` so nothing in this file
+depends on hand-written SQL fragments anymore.
+
+Ops telemetry (Prometheus + Grafana + Loki) is deliberately NOT part of this phase — see
+`infra/README.md`, where it was already scoped into Phase 6 back when the infra was first
+built, alongside the backup/restore drill.
+
+**Not live-verified:** these queries against real Postgres — confirmed correct via Drizzle's
+`.toSQL()` output, not an actual query result. Docker's engine remains stuck in a broken
+handshake state in this environment.
+
 ## Getting started
 
 Requires Node ≥20, pnpm 9.15+, Docker.
@@ -174,7 +204,7 @@ Each phase ends deployable.
 | 2 | Auth + crypto — Better Auth, 2FA, OAuth, vault, onboarding | ✅ Built |
 | 3 | Core pipeline — evaluate → track (CV tailoring/PDF deferred, see below) | ✅ Built — AI call unverified, no API key in this environment |
 | 4 | Billing — Stripe free + Pro | ✅ Built — checkout/webhook unverified, no Stripe test key in this environment |
-| 5 | Analytics — event pipeline, admin dashboard, ops telemetry | Planned |
+| 5 | Analytics — event pipeline, admin dashboard (ops telemetry deferred to Phase 6, see `infra/README.md`) | ✅ Built — DB queries offline-verified, not against live Postgres |
 | 6 | Hardening — threat model, restore drill, launch runbook | Planned |
 
 ## Infrastructure

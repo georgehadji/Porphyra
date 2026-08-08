@@ -2,6 +2,7 @@ import { processedStripeEvents, subscriptions } from "@porphyra/db";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
+import { track } from "@/lib/analytics";
 import { db } from "@/lib/db";
 import { getStripe } from "@/lib/stripe";
 
@@ -86,16 +87,26 @@ async function upsertSubscriptionFromStripe(
   // is a real risk to confirm against a live webhook payload before
   // launch, not something typecheck alone can settle.
   const periodEndUnix = stripeSubscription.current_period_end;
+  const newTier = isActive ? "pro" : "free";
 
-  await db
+  const existing = await db.query.subscriptions.findFirst({
+    where: eq(subscriptions.stripeCustomerId, stripeCustomerId),
+  });
+
+  const [updated] = await db
     .update(subscriptions)
     .set({
       stripeSubscriptionId: stripeSubscription.id,
-      tier: isActive ? "pro" : "free",
+      tier: newTier,
       status: stripeSubscription.status,
       currentPeriodEnd: periodEndUnix ? new Date(periodEndUnix * 1000) : null,
       cancelAtPeriodEnd: stripeSubscription.cancel_at_period_end,
       updatedAt: new Date(),
     })
-    .where(eq(subscriptions.stripeCustomerId, stripeCustomerId));
+    .where(eq(subscriptions.stripeCustomerId, stripeCustomerId))
+    .returning({ userId: subscriptions.userId });
+
+  if (updated && existing?.tier !== "pro" && newTier === "pro") {
+    await track(updated.userId, "subscription_upgraded");
+  }
 }

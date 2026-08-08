@@ -4,6 +4,7 @@ import { aiJobs } from "@porphyra/db";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { track } from "@/lib/analytics";
 import { db } from "@/lib/db";
 import { checkEvaluationQuota, recordEvaluationUsage } from "@/lib/quota";
 import { getSession } from "@/lib/session";
@@ -37,6 +38,7 @@ export async function POST(request: Request) {
 
   const quota = await checkEvaluationQuota(session.user.id);
   if (!quota.allowed) {
+    await track(session.user.id, "evaluation_quota_exceeded", { limit: quota.limit ?? 0 });
     return NextResponse.json(
       {
         message: `You've used all ${quota.limit} free evaluations this month. Upgrade for unlimited.`,
@@ -71,6 +73,10 @@ export async function POST(request: Request) {
       .where(eq(aiJobs.id, job.id));
 
     await recordEvaluationUsage(session.user.id, costUsd);
+    await track(session.user.id, "evaluation_completed", {
+      score: result.report.score,
+      legitimacyTier: result.report.legitimacyTier,
+    });
 
     return NextResponse.json({ report: result.report });
   } catch (error) {

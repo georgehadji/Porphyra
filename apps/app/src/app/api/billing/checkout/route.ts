@@ -1,6 +1,7 @@
 import { subscriptions } from "@porphyra/db";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
+import { track } from "@/lib/analytics";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { getStripe, proPriceId } from "@/lib/stripe";
@@ -50,5 +51,8 @@ export async function POST() {
   if (!checkoutSession.url) {
     return NextResponse.json({ message: "Couldn't start checkout." }, { status: 500 });
   }
+
+  await track(session.user.id, "checkout_started");
+
   return NextResponse.json({ url: checkoutSession.url });
 }

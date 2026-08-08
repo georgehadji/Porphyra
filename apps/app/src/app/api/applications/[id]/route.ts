@@ -3,6 +3,7 @@ import { applications } from "@porphyra/db";
 import { and, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { track } from "@/lib/analytics";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/session";
 
@@ -53,6 +54,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     })
     .where(eq(applications.id, id))
     .returning();
+
+  await track(session.user.id, "application_state_changed", {
+    from: existing.state,
+    to: targetState,
+  });
 
   return NextResponse.json(updated);
 }

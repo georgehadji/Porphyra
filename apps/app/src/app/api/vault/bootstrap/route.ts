@@ -1,6 +1,7 @@
 import { userKeys } from "@porphyra/db";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { track } from "@/lib/analytics";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/session";
 
@@ -67,6 +68,8 @@ export async function POST(request: Request) {
     recoveryWrappedDekIv: recoveryWrappedDek.iv,
     kdfParams,
   });
+
+  await track(session.user.id, "vault_bootstrapped");
 
   return NextResponse.json({ ok: true }, { status: 201 });
 }
