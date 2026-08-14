@@ -1,21 +1,19 @@
+import { currentModel, EVALUATE_QUEUE_NAME, evaluateQueue } from "@porphyra/ai";
 import { targetProfileSchema } from "@porphyra/core";
-import { estimateCostUsd, evaluateJobPosting } from "@porphyra/ai";
 import { aiJobs } from "@porphyra/db";
-import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { track } from "@/lib/analytics";
 import { db } from "@/lib/db";
-import { checkEvaluationQuota, recordEvaluationUsage } from "@/lib/quota";
+import { tryReserveEvaluationSlot } from "@/lib/quota";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { getSession } from "@/lib/session";
 
 // Per-user burst limit, separate from and tighter than the monthly quota —
 // the quota caps total spend, this caps how FAST that spend can happen.
-// Without it, a script hammering this endpoint could fire many concurrent
-// evaluations before checkEvaluationQuota's read-then-write has a chance
-// to catch up (it isn't transactionally atomic against concurrent
-// requests — a real gap, noted here rather than silently accepted).
+// tryReserveEvaluationSlot (see lib/quota.ts) is atomic against concurrent
+// requests on its own, so this is defense-in-depth against burst load, not
+// a race workaround.
 const EVALUATE_RATE_LIMIT = 5;
 const EVALUATE_RATE_WINDOW_MS = 60_000;
 
@@ -24,8 +22,20 @@ const EVALUATE_RATE_WINDOW_MS = 60_000;
 // plaintext for this one call only; this route never writes that plaintext
 // to disk or to any log (Next's default access log doesn't capture request
 // bodies, and nothing here calls console.log on the input — keep it that
-// way if you touch this file). The response report is also plaintext; the
-// CLIENT re-encrypts it before persisting via POST /api/vault/items.
+// way if you touch this file), and it never even holds the plaintext
+// itself — it's forwarded straight into the BullMQ job payload, which
+// Redis stores until apps/worker picks it up and discards. The worker
+// re-derives the plaintext report exactly once for the client to collect
+// (see the sibling [jobId]/route.ts); this route only enqueues and returns.
+//
+// PRODUCER ONLY (docs/ARCHITECTURE_UPLIFT_PLAN.md §3.1) — this route used
+// to call Anthropic synchronously and hold the request open for the full
+// round trip. It now validates, reserves quota, enqueues a job, and
+// returns 202 immediately; apps/worker does the actual AI call, and the
+// client polls GET /api/evaluate/[jobId] for the result. This is what
+// removes the AI orchestration bottleneck the architecture audit flagged:
+// no request here waits on Anthropic, so load on this endpoint no longer
+// scales with Anthropic's latency.
 
 const evaluateSchema = z.object({
   cvPlaintext: z.string().min(1).max(50_000),
@@ -58,7 +68,11 @@ export async function POST(request: Request) {
     );
   }
 
-  const quota = await checkEvaluationQuota(session.user.id);
+  // Reserves the slot BEFORE enqueueing — atomically, so a concurrent
+  // request from the same user can't slip past the same quota window (see
+  // lib/quota.ts). If the worker's AI call fails, it releases this
+  // reservation itself; a failed call must never burn quota.
+  const quota = await tryReserveEvaluationSlot(session.user.id);
   if (!quota.allowed) {
     await track(session.user.id, "evaluation_quota_exceeded", { limit: quota.limit ?? 0 });
     return NextResponse.json(
@@ -70,50 +84,32 @@ export async function POST(request: Request) {
     );
   }
 
-  const model = "claude-sonnet-5";
+  const model = currentModel();
   const [job] = await db
     .insert(aiJobs)
-    .values({ userId: session.user.id, status: "processing", provider: "anthropic", model })
+    .values({ userId: session.user.id, status: "queued", provider: "anthropic", model })
     .returning({ id: aiJobs.id });
   if (!job) {
     return NextResponse.json({ message: "Couldn't start the evaluation." }, { status: 500 });
   }
 
-  try {
-    const result = await evaluateJobPosting(parsed.data);
-    const costUsd = estimateCostUsd(model, result.inputTokens, result.outputTokens);
+  await evaluateQueue().add(
+    EVALUATE_QUEUE_NAME,
+    {
+      aiJobId: job.id,
+      userId: session.user.id,
+      model,
+      quotaReserved: quota.limit !== null,
+      ...parsed.data,
+    },
+    {
+      jobId: job.id, // BullMQ dedupes on jobId — a client retry with the same ai_jobs row never double-enqueues
+      attempts: 2,
+      backoff: { type: "exponential", delay: 2_000 },
+      removeOnComplete: { age: 3600 }, // job metadata only, never the plaintext — that lives in Redis under its own short TTL
+      removeOnFail: { age: 86_400 },
+    },
+  );
 
-    await db
-      .update(aiJobs)
-      .set({
-        status: "completed",
-        inputTokens: result.inputTokens,
-        outputTokens: result.outputTokens,
-        costUsd: costUsd.toFixed(6),
-        completedAt: new Date(),
-      })
-      .where(eq(aiJobs.id, job.id));
-
-    await recordEvaluationUsage(session.user.id, costUsd);
-    await track(session.user.id, "evaluation_completed", {
-      score: result.report.score,
-      legitimacyTier: result.report.legitimacyTier,
-    });
-
-    return NextResponse.json({ report: result.report });
-  } catch (error) {
-    await db
-      .update(aiJobs)
-      .set({
-        status: "failed",
-        errorMessage: error instanceof Error ? error.message : "Unknown error",
-        completedAt: new Date(),
-      })
-      .where(eq(aiJobs.id, job.id));
-
-    return NextResponse.json(
-      { message: "Evaluation failed — try again shortly." },
-      { status: 502 },
-    );
-  }
+  return NextResponse.json({ jobId: job.id }, { status: 202 });
 }

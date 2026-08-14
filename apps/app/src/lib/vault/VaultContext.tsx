@@ -1,7 +1,14 @@
 "use client";
 
-import { aesDecryptText, aesEncryptText, computeBlindIndex, type EncryptedPayload } from "@porphyra/crypto";
-import { type ReactNode, createContext, useCallback, useContext, useMemo, useState } from "react";
+import {
+  aesDecryptText,
+  aesEncryptText,
+  computeBlindIndex,
+  type DekHandle,
+  type EncryptedPayload,
+  type IndexKeyHandle,
+} from "@porphyra/crypto";
+import { createContext, type ReactNode, useCallback, useContext, useMemo, useState } from "react";
 
 interface VaultContextValue {
   isUnlocked: boolean;
@@ -9,8 +16,11 @@ interface VaultContextValue {
    * keys are derived together from the same DEK — see
    * packages/crypto/src/keys.ts's deriveIndexKey — so callers never
    * construct an indexKey any other way (a throwaway/unrelated key would
-   * make blind-index dedup silently compare against nothing real). */
-  unlock: (dekKey: CryptoKey, indexKey: CryptoKey) => void;
+   * make blind-index dedup silently compare against nothing real). The
+   * DekHandle/IndexKeyHandle types (packages/crypto/src/brands.ts) also
+   * make it a compile error to pass these two arguments in the wrong
+   * order or substitute one for the other. */
+  unlock: (dekKey: DekHandle, indexKey: IndexKeyHandle) => void;
   /** Clears both in-memory keys. Call on explicit logout and on session
    * expiry — never rely on garbage collection alone for something this
    * sensitive. */
@@ -34,10 +44,10 @@ const VaultContext = createContext<VaultContextValue | null>(null);
  * plan's Phase 3 scope before building it.
  */
 export function VaultProvider({ children }: { children: ReactNode }) {
-  const [dekKey, setDekKey] = useState<CryptoKey | null>(null);
-  const [indexKey, setIndexKey] = useState<CryptoKey | null>(null);
+  const [dekKey, setDekKey] = useState<DekHandle | null>(null);
+  const [indexKey, setIndexKey] = useState<IndexKeyHandle | null>(null);
 
-  const unlock = useCallback((dek: CryptoKey, index: CryptoKey) => {
+  const unlock = useCallback((dek: DekHandle, index: IndexKeyHandle) => {
     setDekKey(dek);
     setIndexKey(index);
   }, []);

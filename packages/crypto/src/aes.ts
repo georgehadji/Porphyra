@@ -3,6 +3,7 @@
 // reusing (key, IV); this module makes reuse structurally impossible by
 // generating the IV inside encrypt() rather than accepting one as a param.
 
+import type { AesCapableKey } from "./brands";
 import {
   base64ToBytes,
   bytesToBase64,
@@ -27,10 +28,7 @@ export interface EncryptedPayload {
  * serialized, which is what keeps a compromised page from exfiltrating them
  * via a debugger or a supply-chain-poisoned dependency reading memory.
  */
-export async function importAesKey(
-  rawBytes: Uint8Array,
-  extractable = false,
-): Promise<CryptoKey> {
+export async function importAesKey(rawBytes: Uint8Array, extractable = false): Promise<CryptoKey> {
   return crypto.subtle.importKey("raw", toArrayBuffer(rawBytes), { name: "AES-GCM" }, extractable, [
     "encrypt",
     "decrypt",
@@ -38,7 +36,7 @@ export async function importAesKey(
 }
 
 export async function aesEncryptBytes(
-  key: CryptoKey,
+  key: AesCapableKey,
   plaintext: Uint8Array,
 ): Promise<EncryptedPayload> {
   const iv = randomBytes(IV_LENGTH_BYTES);
@@ -54,7 +52,7 @@ export async function aesEncryptBytes(
 }
 
 export async function aesDecryptBytes(
-  key: CryptoKey,
+  key: AesCapableKey,
   payload: EncryptedPayload,
 ): Promise<Uint8Array> {
   const plaintext = await crypto.subtle.decrypt(
@@ -65,11 +63,17 @@ export async function aesDecryptBytes(
   return new Uint8Array(plaintext);
 }
 
-export async function aesEncryptText(key: CryptoKey, plaintext: string): Promise<EncryptedPayload> {
+export async function aesEncryptText(
+  key: AesCapableKey,
+  plaintext: string,
+): Promise<EncryptedPayload> {
   return aesEncryptBytes(key, textToBytes(plaintext));
 }
 
-export async function aesDecryptText(key: CryptoKey, payload: EncryptedPayload): Promise<string> {
+export async function aesDecryptText(
+  key: AesCapableKey,
+  payload: EncryptedPayload,
+): Promise<string> {
   return bytesToText(await aesDecryptBytes(key, payload));
 }
 
@@ -78,14 +82,14 @@ export async function aesDecryptText(key: CryptoKey, payload: EncryptedPayload):
  * for our case, and it lets the wrapped form travel as the same
  * {ciphertext, iv} shape as any other encrypted payload. */
 export async function wrapRawKey(
-  wrappingKey: CryptoKey,
+  wrappingKey: AesCapableKey,
   rawKeyToWrap: Uint8Array,
 ): Promise<EncryptedPayload> {
   return aesEncryptBytes(wrappingKey, rawKeyToWrap);
 }
 
 export async function unwrapRawKey(
-  wrappingKey: CryptoKey,
+  wrappingKey: AesCapableKey,
   wrapped: EncryptedPayload,
 ): Promise<Uint8Array> {
   return aesDecryptBytes(wrappingKey, wrapped);

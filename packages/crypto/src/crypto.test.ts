@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { aesDecryptText, aesEncryptText, importAesKey, unwrapRawKey, wrapRawKey } from "./aes";
 import { computeBlindIndex, normalizeForIndex } from "./blindIndex";
+import { brandKey } from "./brands";
 import { base64ToBytes } from "./encoding";
 import {
   AUTH_VERIFIER_PARAMS,
@@ -25,7 +26,7 @@ describe("full vault lifecycle (password -> MK -> DEK -> record)", () => {
       const salt = generateSalt();
 
       const mkRaw = await deriveKeyMaterial(password, salt, MASTER_KEY_PARAMS);
-      const mk = await importAesKey(mkRaw, false);
+      const mk = brandKey<"MasterKey">(await importAesKey(mkRaw, false));
 
       const dek = generateDek();
       const wrappedDek = await wrapRawKey(mk, dek);
@@ -34,7 +35,7 @@ describe("full vault lifecycle (password -> MK -> DEK -> record)", () => {
       const unwrappedDekRaw = await unwrapRawKey(mk, wrappedDek);
       expect(new Uint8Array(unwrappedDekRaw)).toEqual(dek);
 
-      const dekKey = await importAesKey(unwrappedDekRaw, false);
+      const dekKey = brandKey<"Dek">(await importAesKey(unwrappedDekRaw, false));
       const plaintext = "Senior Product Designer @ a company that shall not be named";
       const encrypted = await aesEncryptText(dekKey, plaintext);
       expect(encrypted.ciphertext).not.toContain(plaintext);
@@ -50,12 +51,12 @@ describe("full vault lifecycle (password -> MK -> DEK -> record)", () => {
     async () => {
       const salt = generateSalt();
       const mkRaw = await deriveKeyMaterial("right password", salt, MASTER_KEY_PARAMS);
-      const mk = await importAesKey(mkRaw, false);
+      const mk = brandKey<"MasterKey">(await importAesKey(mkRaw, false));
       const dek = generateDek();
       const wrappedDek = await wrapRawKey(mk, dek);
 
       const wrongMkRaw = await deriveKeyMaterial("wrong password", salt, MASTER_KEY_PARAMS);
-      const wrongMk = await importAesKey(wrongMkRaw, false);
+      const wrongMk = brandKey<"MasterKey">(await importAesKey(wrongMkRaw, false));
 
       await expect(unwrapRawKey(wrongMk, wrappedDek)).rejects.toThrow();
     },
@@ -123,7 +124,7 @@ describe("auth verifier salt (deterministic, from email)", () => {
   });
 });
 
-describe("auth verifier (what the server sees as \"the password\")", () => {
+describe('auth verifier (what the server sees as "the password")', () => {
   it(
     "differs from the Master Key derived from the same password",
     async () => {
@@ -165,7 +166,7 @@ describe("auth verifier (what the server sees as \"the password\")", () => {
 describe("no plaintext leakage in the encrypted payload shape", () => {
   it("ciphertext and iv are both base64, never contain the source text", async () => {
     const dek = generateDek();
-    const key = await importAesKey(dek, false);
+    const key = brandKey<"Dek">(await importAesKey(dek, false));
     const secret = "sk-ant-do-not-leak-this-1234567890";
     const encrypted = await aesEncryptText(key, secret);
     expect(encrypted.ciphertext).toMatch(/^[A-Za-z0-9+/]+=*$/);

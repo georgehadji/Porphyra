@@ -1,11 +1,12 @@
 "use client";
 
+import type { EvaluationReport } from "@porphyra/core";
 import { Button, Card } from "@porphyra/ui";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useState } from "react";
-import { useVault } from "@/lib/vault/VaultContext";
 import { createVaultItem, listVaultItems } from "@/lib/vault/items";
+import { useVault } from "@/lib/vault/VaultContext";
 
 export default function EvaluatePage() {
   const router = useRouter();
@@ -18,6 +19,38 @@ export default function EvaluatePage() {
   const [roleTitles, setRoleTitles] = useState("");
   const [status, setStatus] = useState<"idle" | "evaluating" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
+
+  // Polls GET /api/evaluate/[jobId] (see that route's own comment) until
+  // the worker (apps/worker) finishes or fails the job — replaces the old
+  // single synchronous POST that waited on Anthropic inline. 1.5s is a
+  // reasonable balance between UI responsiveness and not hammering the
+  // poll endpoint; there's no push/SSE channel here yet, deliberately —
+  // see docs/ARCHITECTURE_UPLIFT_PLAN.md §3.1, polling was the simpler
+  // correct choice for a v1 of the queue.
+  const POLL_INTERVAL_MS = 1500;
+  const POLL_TIMEOUT_MS = 5 * 60 * 1000;
+
+  async function pollForReport(jobId: string): Promise<EvaluationReport> {
+    const deadline = Date.now() + POLL_TIMEOUT_MS;
+    while (Date.now() < deadline) {
+      const response = await fetch(`/api/evaluate/${jobId}`);
+      if (!response.ok) throw new Error("Lost track of the evaluation — try again.");
+      const body = await response.json();
+      if (body.status === "failed") {
+        throw new Error(body.message ?? "Evaluation failed.");
+      }
+      if (body.status === "completed") {
+        if (body.expired || !body.report) {
+          throw new Error(body.message ?? "The report expired before it could be collected.");
+        }
+        return body.report;
+      }
+      await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+    }
+    throw new Error(
+      "Evaluation is taking longer than expected — check back in your pipeline shortly.",
+    );
+  }
 
   useEffect(() => {
     if (!vault.isUnlocked) return;
@@ -63,7 +96,8 @@ export default function EvaluatePage() {
         throw new Error(body?.message ?? "Evaluation failed.");
       }
 
-      const { report } = await response.json();
+      const { jobId } = await response.json();
+      const report = await pollForReport(jobId);
 
       const reportEncrypted = await vault.encrypt(JSON.stringify(report));
       const reportItem = await createVaultItem({ type: "report", ...reportEncrypted });
@@ -86,7 +120,8 @@ export default function EvaluatePage() {
           legitimacyTier: report.legitimacyTier,
         }),
       });
-      if (!applicationResponse.ok) throw new Error("Evaluated, but couldn't save to your pipeline.");
+      if (!applicationResponse.ok)
+        throw new Error("Evaluated, but couldn't save to your pipeline.");
       const application = await applicationResponse.json();
 
       router.push(`/pipeline/${application.id}`);
@@ -124,14 +159,27 @@ export default function EvaluatePage() {
       </p>
       <Card>
         <h1 style={{ fontFamily: "var(--p-font-display)", marginTop: 0 }}>Evaluate a posting</h1>
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+        <form
+          onSubmit={handleSubmit}
+          style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
+        >
           <label>
             Company
-            <input value={company} onChange={(e) => setCompany(e.target.value)} required style={inputStyle} />
+            <input
+              value={company}
+              onChange={(e) => setCompany(e.target.value)}
+              required
+              style={inputStyle}
+            />
           </label>
           <label>
             Role title
-            <input value={role} onChange={(e) => setRole(e.target.value)} required style={inputStyle} />
+            <input
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              required
+              style={inputStyle}
+            />
           </label>
           <label>
             Posting URL (optional)

@@ -51,6 +51,29 @@ services:
         condition: service_started
     networks: [porphyra]
 
+  # AI evaluation queue consumer (docs/ARCHITECTURE_UPLIFT_PLAN.md §3.1) —
+  # the ONLY process that calls Anthropic. `app` only enqueues jobs and
+  # polls their status; this is what makes /api/evaluate stop scaling with
+  # Anthropic's latency. No published ports — it only talks to redis and
+  # postgres. Scale horizontally with `docker compose up --scale worker=N`
+  # if evaluation throughput becomes the bottleneck; concurrency per
+  # replica is WORKER_CONCURRENCY (apps/worker/src/index.ts), not this
+  # replica count — the two compose to total capacity.
+  worker:
+    image: ${REGISTRY:-ghcr.io/porphyra}/worker:${WORKER_TAG:?set WORKER_TAG at deploy time}
+    restart: unless-stopped
+    read_only: true
+    tmpfs: ["/tmp"]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    env_file: [.env]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks: [porphyra]
+
   postgres:
     image: postgres:16.4-alpine3.20
     restart: unless-stopped

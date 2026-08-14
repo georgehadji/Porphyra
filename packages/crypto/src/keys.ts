@@ -4,31 +4,29 @@
 
 import { generateMnemonic, mnemonicToEntropy, validateMnemonic } from "@scure/bip39";
 import { wordlist } from "@scure/bip39/wordlists/english";
+import { brandKey, type IndexKeyHandle } from "./brands";
 import { randomBytes, toArrayBuffer } from "./encoding";
 
 const DEK_LENGTH_BYTES = 32; // AES-256
-const RECOVERY_KEY_LENGTH_BYTES = 32; // -> 24-word BIP39 mnemonic
 
 export function generateDek(): Uint8Array {
   return randomBytes(DEK_LENGTH_BYTES);
 }
 
 /** A recovery key IS a BIP39 entropy source — generating one directly gives
- * us the mnemonic for free instead of a separate encode step. */
+ * us the mnemonic for free instead of a separate encode step. `raw` is
+ * derived FROM the mnemonic (not drawn independently) so the two always
+ * represent the same bytes — RECOVERY_KEY_LENGTH_BYTES stays as
+ * documentation of the resulting entropy size, not an input to this
+ * function. */
 export function generateRecoveryKey(): { raw: Uint8Array; mnemonic: string } {
-  const raw = randomBytes(RECOVERY_KEY_LENGTH_BYTES);
   const mnemonic = generateMnemonic(wordlist, 256); // 256 bits entropy -> 24 words
-  // Re-derive raw from the mnemonic's own entropy so `raw` and `mnemonic`
-  // always represent the same bytes (rather than discarding the mnemonic's
-  // entropy and using an unrelated random draw for `raw`).
   return { raw: mnemonicToEntropy(mnemonic, wordlist), mnemonic };
 }
 
 export function mnemonicToRecoveryKey(mnemonic: string): Uint8Array {
   if (!validateMnemonic(mnemonic, wordlist)) {
-    throw new Error(
-      "That recovery phrase doesn't check out — check for typos or a missing word.",
-    );
+    throw new Error("That recovery phrase doesn't check out — check for typos or a missing word.");
   }
   return mnemonicToEntropy(mnemonic, wordlist);
 }
@@ -42,11 +40,11 @@ export function mnemonicToRecoveryKey(mnemonic: string): Uint8Array {
  * Google?") — not the ability to decrypt anything. Keeping it separate from
  * the DEK means that blast radius can never include vault content.
  */
-export async function deriveIndexKey(dekRaw: Uint8Array): Promise<CryptoKey> {
+export async function deriveIndexKey(dekRaw: Uint8Array): Promise<IndexKeyHandle> {
   const ikm = await crypto.subtle.importKey("raw", toArrayBuffer(dekRaw), "HKDF", false, [
     "deriveKey",
   ]);
-  return crypto.subtle.deriveKey(
+  const key = await crypto.subtle.deriveKey(
     {
       name: "HKDF",
       hash: "SHA-256",
@@ -58,4 +56,5 @@ export async function deriveIndexKey(dekRaw: Uint8Array): Promise<CryptoKey> {
     false,
     ["sign"],
   );
+  return brandKey<"IndexKey">(key);
 }

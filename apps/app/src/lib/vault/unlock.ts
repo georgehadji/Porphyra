@@ -1,12 +1,15 @@
 "use client";
 
 import {
-  type EncryptedPayload,
-  type KdfParams,
   base64ToBytes,
+  brandKey,
+  type DekHandle,
   deriveIndexKey,
   deriveKeyMaterial,
+  type EncryptedPayload,
+  type IndexKeyHandle,
   importAesKey,
+  type KdfParams,
   unwrapRawKey,
 } from "@porphyra/crypto";
 
@@ -18,8 +21,8 @@ export interface VaultKeysResponse {
 }
 
 export interface UnlockedVault {
-  dekKey: CryptoKey;
-  indexKey: CryptoKey;
+  dekKey: DekHandle;
+  indexKey: IndexKeyHandle;
 }
 
 /**
@@ -33,13 +36,16 @@ export interface UnlockedVault {
  * the vault password itself (only the separate auth verifier — see
  * apps/app/src/lib/auth.ts).
  */
-export async function unlockVault(password: string, keys: VaultKeysResponse): Promise<UnlockedVault> {
+export async function unlockVault(
+  password: string,
+  keys: VaultKeysResponse,
+): Promise<UnlockedVault> {
   const encSalt = base64ToBytes(keys.encSalt);
   const mkRaw = await deriveKeyMaterial(password, encSalt, keys.kdfParams);
-  const masterKey = await importAesKey(mkRaw, false);
+  const masterKey = brandKey<"MasterKey">(await importAesKey(mkRaw, false));
   const dekRaw = await unwrapRawKey(masterKey, keys.wrappedDek);
   const [dekKey, indexKey] = await Promise.all([
-    importAesKey(dekRaw, false),
+    (async () => brandKey<"Dek">(await importAesKey(dekRaw, false)))(),
     deriveIndexKey(dekRaw),
   ]);
   return { dekKey, indexKey };
@@ -54,10 +60,10 @@ export async function unlockVaultWithRecoveryKey(
   recoveryKeyRaw: Uint8Array,
   keys: Pick<VaultKeysResponse, "recoveryWrappedDek">,
 ): Promise<UnlockedVault> {
-  const recoveryKey = await importAesKey(recoveryKeyRaw, false);
+  const recoveryKey = brandKey<"RecoveryKey">(await importAesKey(recoveryKeyRaw, false));
   const dekRaw = await unwrapRawKey(recoveryKey, keys.recoveryWrappedDek);
   const [dekKey, indexKey] = await Promise.all([
-    importAesKey(dekRaw, false),
+    (async () => brandKey<"Dek">(await importAesKey(dekRaw, false)))(),
     deriveIndexKey(dekRaw),
   ]);
   return { dekKey, indexKey };

@@ -24,6 +24,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -289,7 +290,16 @@ export const processedStripeEvents = pgTable("processed_stripe_events", {
   processedAt: timestamp("processed_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-/** Monthly rolling usage against the plan's AI-evaluation quota. */
+/**
+ * Monthly rolling usage against the plan's AI-evaluation quota.
+ *
+ * `(userId, periodStart)` is UNIQUE, not just indexed — this is what makes
+ * `tryConsumeEvaluationQuota` (apps/app/src/lib/quota.ts) a single atomic
+ * `INSERT ... ON CONFLICT (user_id, period_start) DO UPDATE ... WHERE`
+ * instead of a read-then-write race. Without the uniqueness constraint,
+ * `ON CONFLICT` has no target and Postgres rejects the statement outright —
+ * this isn't just an optimization, the atomic quota check depends on it.
+ */
 export const usageCounters = pgTable(
   "usage_counters",
   {
@@ -301,7 +311,7 @@ export const usageCounters = pgTable(
     evaluationsUsed: integer("evaluations_used").notNull().default(0),
     aiCostUsd: numeric("ai_cost_usd", { precision: 10, scale: 4 }).notNull().default("0"),
   },
-  (table) => [index("usage_counters_user_period_idx").on(table.userId, table.periodStart)],
+  (table) => [uniqueIndex("usage_counters_user_period_idx").on(table.userId, table.periodStart)],
 );
 
 /**
@@ -319,10 +329,7 @@ export const events = pgTable(
     props: jsonb("props").notNull().default({}),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [
-    index("events_name_idx").on(table.name),
-    index("events_user_idx").on(table.userId),
-  ],
+  (table) => [index("events_name_idx").on(table.name), index("events_user_idx").on(table.userId)],
 );
 
 /** Append-only. Nothing ever updates or deletes a row here except the

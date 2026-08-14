@@ -9,8 +9,17 @@
 // human in the loop to re-prompt on a malformed response.
 
 import { type EvaluationReport, evaluationReportSchema, type TargetProfile } from "@porphyra/core";
+import { CircuitBreaker, withRetry } from "../circuitBreaker";
 import { anthropicClient, currentModel } from "../client";
 import { MAX_OUTPUT_TOKENS } from "../providers";
+
+// Module-scoped, not per-call — the whole point of a circuit breaker is to
+// remember failures ACROSS calls so the 50th concurrent request during an
+// outage benefits from what the first 5 already learned. Safe as a
+// singleton: this module has no per-request state beyond the breaker's own
+// open/closed bookkeeping, and Node.js module caching gives every import
+// site the same instance within one process.
+const anthropicBreaker = new CircuitBreaker({ failureThreshold: 5, cooldownMs: 30_000 });
 
 export interface EvaluateInput {
   /** Decrypted client-side, sent for this one request only — see the vault
@@ -55,7 +64,8 @@ const REPORT_JSON_SCHEMA = {
     },
     dimensions: {
       type: "object",
-      description: "One entry per dimension key: cv_match, north_star, comp, cultural, red_flags, growth.",
+      description:
+        "One entry per dimension key: cv_match, north_star, comp, cultural, red_flags, growth.",
       properties: {
         cv_match: { $ref: "#/$defs/dimensionScore" },
         north_star: { $ref: "#/$defs/dimensionScore" },
@@ -140,25 +150,37 @@ export async function evaluateJobPosting(input: EvaluateInput): Promise<Evaluate
   const client = anthropicClient();
   const model = currentModel();
 
-  const response = await client.messages.create({
-    model,
-    max_tokens: MAX_OUTPUT_TOKENS,
-    system: buildSystemPrompt(),
-    messages: [{ role: "user", content: buildUserPrompt(input) }],
-    tools: [
-      {
-        name: REPORT_TOOL_NAME,
-        description: "Submit the completed job posting evaluation.",
-        // Cast rather than typing against the SDK's own Tool.InputSchema —
-        // that type's exact import path has moved across SDK versions, and
-        // this object is plain JSON Schema regardless; the real validation
-        // that matters is evaluationReportSchema.safeParse() below, which
-        // checks the model's actual response, not this request shape.
-        input_schema: REPORT_JSON_SCHEMA as unknown as { type: "object" },
-      },
-    ],
-    tool_choice: { type: "tool", name: REPORT_TOOL_NAME },
-  });
+  // Circuit breaker (fails fast during a sustained outage) wraps bounded
+  // retry (absorbs one transient blip) — that ordering matters: retry is
+  // the inner call, so each of its attempts still counts toward the
+  // breaker's failure count, and the breaker can trip open mid-retry-loop
+  // rather than only being checked once per evaluateJobPosting call.
+  const response = await anthropicBreaker.execute(() =>
+    withRetry(
+      () =>
+        client.messages.create({
+          model,
+          max_tokens: MAX_OUTPUT_TOKENS,
+          system: buildSystemPrompt(),
+          messages: [{ role: "user", content: buildUserPrompt(input) }],
+          tools: [
+            {
+              name: REPORT_TOOL_NAME,
+              description: "Submit the completed job posting evaluation.",
+              // Cast rather than typing against the SDK's own
+              // Tool.InputSchema — that type's exact import path has moved
+              // across SDK versions, and this object is plain JSON Schema
+              // regardless; the real validation that matters is
+              // evaluationReportSchema.safeParse() below, which checks the
+              // model's actual response, not this request shape.
+              input_schema: REPORT_JSON_SCHEMA as unknown as { type: "object" },
+            },
+          ],
+          tool_choice: { type: "tool", name: REPORT_TOOL_NAME },
+        }),
+      { maxAttempts: 3, baseDelayMs: 500 },
+    ),
+  );
 
   const toolUse = response.content.find((block) => block.type === "tool_use");
   if (!toolUse || toolUse.type !== "tool_use") {

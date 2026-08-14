@@ -1,16 +1,19 @@
 "use client";
 
 import {
+  brandKey,
   bytesToBase64,
-  type EncryptedPayload,
-  type KdfParams,
-  MASTER_KEY_PARAMS,
+  type DekHandle,
   deriveIndexKey,
   deriveKeyMaterial,
+  type EncryptedPayload,
   generateDek,
   generateRecoveryKey,
   generateSalt,
+  type IndexKeyHandle,
   importAesKey,
+  type KdfParams,
+  MASTER_KEY_PARAMS,
   wrapRawKey,
 } from "@porphyra/crypto";
 
@@ -27,10 +30,10 @@ export interface VaultBootstrapResult {
   recoveryMnemonic: string;
   /** The unwrapped DEK, ready to use immediately post-signup so the user
    * isn't asked to log in again right after registering. */
-  dekKey: CryptoKey;
+  dekKey: DekHandle;
   /** Derived from the same DEK via HKDF — see VaultContext's comment on
    * why this always travels paired with dekKey, never generated separately. */
-  indexKey: CryptoKey;
+  indexKey: IndexKeyHandle;
 }
 
 /**
@@ -42,16 +45,16 @@ export interface VaultBootstrapResult {
 export async function bootstrapVault(password: string): Promise<VaultBootstrapResult> {
   const encSalt = generateSalt();
   const mkRaw = await deriveKeyMaterial(password, encSalt, MASTER_KEY_PARAMS);
-  const masterKey = await importAesKey(mkRaw, false);
+  const masterKey = brandKey<"MasterKey">(await importAesKey(mkRaw, false));
 
   const dekRaw = generateDek();
   const wrappedDek = await wrapRawKey(masterKey, dekRaw);
 
   const { raw: recoveryKeyRaw, mnemonic } = generateRecoveryKey();
-  const recoveryKey = await importAesKey(recoveryKeyRaw, false);
+  const recoveryKey = brandKey<"RecoveryKey">(await importAesKey(recoveryKeyRaw, false));
   const recoveryWrappedDek = await wrapRawKey(recoveryKey, dekRaw);
 
-  const dekKey = await importAesKey(dekRaw, false);
+  const dekKey = brandKey<"Dek">(await importAesKey(dekRaw, false));
   const indexKey = await deriveIndexKey(dekRaw);
 
   return {
